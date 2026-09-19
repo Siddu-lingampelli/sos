@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+backend/venv/
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/build/
+*.log
+npm-debug.log*
+
+# Env / secrets
+.env
+*.pem
+*.key
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Docker / DB
+postgres-data/
+pgdata/
+
+# Models / media (large, local-only)
+models/
+*.pt
+*.onnx
+*.mp4
+*.avi
+*.wav
+*.mp3
+
+# Misc
+.claude/
+*.tmp

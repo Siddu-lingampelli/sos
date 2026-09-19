@@ -1,0 +1,9 @@
+opencv-python==4.10.0.84
+numpy==1.26.4
+torch==2.5.1
+torchaudio==2.5.1
+ultralytics==8.3.0
+faster-whisper==1.0.3
+openvino==2024.5.0
+# ByteTrack: install from source in Level 4 (https://github.com/ifzhang/ByteTrack)
+# Silero VAD: torch.hub.load('snakers4/silero-vad') — no pip pin in L1
