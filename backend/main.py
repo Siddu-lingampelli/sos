@@ -3,8 +3,13 @@
 Run: uvicorn backend.main:app --reload --port 8000
 Health: GET /health, GET /api/health
 """
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import create_engine
+from sqlalchemy.exc import OperationalError
+
+from .app.core.config import settings
 
 app = FastAPI(title="SilentSOS API", version="0.1.0-level1")
 
@@ -29,4 +34,19 @@ def health():
 
 @app.get("/api/health")
 def api_health():
-    return {"status": "ok", "api": "v1-foundation", "db": "not-configured-yet-level2"}
+    # Level 1 Deliverable: "PostgreSQL connects."
+    db_status = "untested"
+    try:
+        engine = create_engine(settings.DATABASE_URL)
+        with engine.connect() as conn:
+            db_status = "connected"
+    except OperationalError:
+        db_status = "disconnected"
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+        
+    return {
+        "status": "ok", 
+        "api": "v1-foundation", 
+        "db": db_status
+    }
