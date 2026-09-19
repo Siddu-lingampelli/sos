@@ -28,8 +28,13 @@ class CameraStream:
         self.height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.fps = self.cap.get(cv2.CAP_PROP_FPS)
         
-        # Identify if we're dealing with a live cam
-        self.is_live = isinstance(self.source, int)
+        # Identify if we're dealing with a live cam or a pre-recorded file format
+        if isinstance(self.source, int):
+            self.is_live = True
+        elif isinstance(self.source, str) and self.source.lower().startswith(('rtsp://', 'http://', 'https://')):
+            self.is_live = True
+        else:
+            self.is_live = False
 
     def read_frames(self) -> Generator[Tuple[bool, Optional[np.ndarray]], None, None]:
         """
