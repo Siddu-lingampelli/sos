@@ -15,7 +15,7 @@ const Dashboard = () => (
         <h2 className="font-semibold mb-2">Camera 1 (Main Hallway)</h2>
         <div className="bg-slate-900 rounded-lg overflow-hidden aspect-video flex items-center justify-center">
           <img 
-            src="http://localhost:8000/api/stream/video?source=0" 
+            src="http://localhost:8000/api/stream/video?source=http://192.168.1.33:8080/video" 
             alt="Live AI Feed" 
             className="w-full h-full object-cover"
             onError={(e) => {
