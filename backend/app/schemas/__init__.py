@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 from ..models import RoleEnum, IncidentStatus
@@ -24,8 +24,7 @@ class UserResponse(UserBase):
     role: RoleEnum
     is_active: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Login Schema
 class LoginRequest(BaseModel):
@@ -44,8 +43,7 @@ class LocationCreate(LocationBase):
 class LocationResponse(LocationBase):
     id: int
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Camera Schemas
 class CameraBase(BaseModel):
@@ -59,8 +57,7 @@ class CameraResponse(CameraBase):
     id: int
     location_id: int
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Incident Schemas
 class IncidentBase(BaseModel):
@@ -77,5 +74,4 @@ class IncidentResponse(IncidentBase):
     camera_id: int
     timestamp: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

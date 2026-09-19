@@ -12,6 +12,7 @@ from sqlalchemy.exc import OperationalError
 from app.core.config import settings
 from app.api.api import api_router
 from app.db.session import Base, engine
+from app.models import User, Location, Camera, Incident, DetectionEvent, Alert
 
 app = FastAPI(title="SilentSOS API", version="0.2.0-level2")
 
@@ -24,7 +25,10 @@ app.add_middleware(
 )
 
 # Initialize DB tables explicitly for dev (in prod we use alembic/migrations)
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+except OperationalError:
+    print("WARNING: Cannot connect to PostgreSQL. Assuming offline mode or tests.")
 
 app.include_router(api_router, prefix="/api")
 
