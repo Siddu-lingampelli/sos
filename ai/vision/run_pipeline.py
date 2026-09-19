@@ -15,7 +15,6 @@ def main():
     parser.add_argument("--headless", action="store_true", help="Run without UI window")
     args = parser.parse_args()
 
-    # Determine numeric or string source
     source = int(args.source) if args.source.isdigit() else args.source
 
     print(f"[*] Initializing vision pipeline on source: {source}")
@@ -23,10 +22,10 @@ def main():
     detector = PoseDetector(model_path="yolo11n-pose.pt")
     visualizer = Visualizer()
 
-    # Video Writer setup if output is requested
     writer = None
     if args.output:
         os.makedirs(os.path.dirname(args.output) or ".", exist_ok=True)
+        # Using 4cc string expansion which is universally safer for OpenCV
         fourcc = cv2.VideoWriter_fourcc(*'mp4v') # type: ignore
         fps = stream.fps if stream.fps > 0 else args.fps
         writer = cv2.VideoWriter(args.output, fourcc, fps, (stream.width, stream.height))
@@ -34,9 +33,9 @@ def main():
 
     print("[*] Starting inference loop. Press 'q' to quit.")
     
-    frame_count = 0
-    start_time = time.time()
+    last_frame_time = time.time()
     current_fps = 0.0
+    alpha = 0.1 # EMA alpha for smoothing FPS
 
     try:
         for ret, frame in stream.read_frames():
@@ -44,16 +43,17 @@ def main():
                 print("\n[*] End of video stream.")
                 break
 
+            # Calculate FPS via Exponential Moving Average (EMA)
+            current_time = time.time()
+            elapsed = current_time - last_frame_time
+            if elapsed > 0:
+                instant_fps = 1.0 / elapsed
+                current_fps = (alpha * instant_fps) + ((1 - alpha) * current_fps)
+            last_frame_time = current_time
+
             # Process frame
             persons, latency = detector.process_frame(frame)
             
-            # FPS Calculation
-            frame_count += 1
-            if frame_count % 10 == 0:
-                elapsed = time.time() - start_time
-                current_fps = 10 / elapsed
-                start_time = time.time()
-
             # Visualize
             out_frame = visualizer.draw(frame, persons, current_fps, latency)
 

@@ -16,13 +16,14 @@ class Visualizer:
         """
         Draws bounding boxes, skeletons, and telemetry onto the frame.
         """
-        h, w = frame.shape[:2]
+        out_frame = frame.copy()
+        h, w = out_frame.shape[:2]
         
         # Draw detections
         for person in persons:
             # Box
             x1, y1, x2, y2 = map(int, person["box"])
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+            cv2.rectangle(out_frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
             
             # Keypoints & Skeleton
             keypoints = person.get("keypoints", [])
@@ -31,31 +32,36 @@ class Visualizer:
 
             # Draw bones
             for link in self.skeleton:
-                pt1 = keypoints[link[0]]
-                pt2 = keypoints[link[1]]
-                
-                # Check confidence threshold (index 2 is confidence)
-                if pt1[2] > 0.5 and pt2[2] > 0.5:
-                    cv2.line(frame, 
-                             (int(pt1[0]), int(pt1[1])), 
-                             (int(pt2[0]), int(pt2[1])), 
-                             self.bone_colors, 2)
+                try:
+                    pt1 = keypoints[link[0]]
+                    pt2 = keypoints[link[1]]
+                    
+                    # Verify keypoints confidence > 0.5 if confidence exists
+                    conf1 = pt1[2] if len(pt1) > 2 else 1.0
+                    conf2 = pt2[2] if len(pt2) > 2 else 1.0
+                    
+                    if conf1 > 0.5 and conf2 > 0.5:
+                        cv2.line(out_frame, 
+                                 (int(pt1[0]), int(pt1[1])), 
+                                 (int(pt2[0]), int(pt2[1])), 
+                                 self.bone_colors, 2)
+                except IndexError:
+                    continue
             
             # Draw keypoints
             for pt in keypoints:
-                if pt[2] > 0.5:
-                    cv2.circle(frame, (int(pt[0]), int(pt[1])), 4, self.keypoint_colors, -1)
+                conf = pt[2] if len(pt) > 2 else 1.0
+                if conf > 0.5:
+                    cv2.circle(out_frame, (int(pt[0]), int(pt[1])), 4, self.keypoint_colors, -1)
 
         # Draw UI Overlay (Telemetry)
-        # Background bar
-        cv2.rectangle(frame, (0, 0), (w, 40), (0, 0, 0), -1)
+        cv2.rectangle(out_frame, (0, 0), (w, 40), (0, 0, 0), -1)
         
-        # Telemetry text
-        cv2.putText(frame, f"SilentSOS - Level 3 Vision Pipeline", (10, 25), 
+        cv2.putText(out_frame, f"SilentSOS - L3 Vision", (10, 25), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-        cv2.putText(frame, f"FPS: {fps:.1f}", (w - 250, 25), 
+        cv2.putText(out_frame, f"FPS: {fps:.1f}", (w - 250, 25), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-        cv2.putText(frame, f"Latency: {latency*1000:.1f}ms", (w - 140, 25), 
+        cv2.putText(out_frame, f"Latency: {latency*1000:.1f}ms", (w - 140, 25), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
 
-        return frame
+        return out_frame
