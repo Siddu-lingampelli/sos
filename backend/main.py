@@ -1,6 +1,6 @@
-"""SilentSOS Backend — Level 1 foundation.
+"""SilentSOS Backend — Level 1 foundation -> Level 2 API integration.
 
-Run: uvicorn backend.main:app --reload --port 8000
+Run: uvicorn main:app --reload --port 8000
 Health: GET /health, GET /api/health
 """
 import os
@@ -9,36 +9,40 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 
-from .app.core.config import settings
+from app.core.config import settings
+from app.api.api import api_router
+from app.db.session import Base, engine
 
-app = FastAPI(title="SilentSOS API", version="0.1.0-level1")
+app = FastAPI(title="SilentSOS API", version="0.2.0-level2")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=["*"], # Relaxed for dev
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Initialize DB tables explicitly for dev (in prod we use alembic/migrations)
+Base.metadata.create_all(bind=engine)
+
+app.include_router(api_router, prefix="/api")
 
 @app.get("/")
 def read_root():
-    return {"service": "SilentSOS API", "level": 1, "status": "running"}
-
+    return {"service": "SilentSOS API", "level": 2, "status": "running"}
 
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "backend"}
 
-
 @app.get("/api/health")
 def api_health():
-    # Level 1 Deliverable: "PostgreSQL connects."
+    # Verify DB
     db_status = "untested"
     try:
-        engine = create_engine(settings.DATABASE_URL)
-        with engine.connect() as conn:
+        engine_test = create_engine(settings.DATABASE_URL)
+        with engine_test.connect() as conn:
             db_status = "connected"
     except OperationalError:
         db_status = "disconnected"
@@ -47,6 +51,6 @@ def api_health():
         
     return {
         "status": "ok", 
-        "api": "v1-foundation", 
+        "api": "v2-db-foundation", 
         "db": db_status
     }
