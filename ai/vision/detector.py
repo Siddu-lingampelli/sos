@@ -22,7 +22,8 @@ class PoseDetector:
         start_time = time.time()
         
         # verbose=False prevents console logging every frame
-        results = self.model(frame, verbose=False)
+        # conf=0.15 makes the AI highly sensitive to compressed IP camera feeds
+        results = self.model(frame, verbose=False, conf=0.15)
         latency = time.time() - start_time
         
         persons = []
