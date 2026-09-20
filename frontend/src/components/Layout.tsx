@@ -113,7 +113,7 @@ export default function Layout() {
             </span>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-8 py-7">
+        <main className="mx-auto w-full max-w-7xl flex-1 px-8 py-7">
           <Outlet />
         </main>
         <footer className="px-8 pb-5 font-mono text-[11px] text-[#a8a08a]">

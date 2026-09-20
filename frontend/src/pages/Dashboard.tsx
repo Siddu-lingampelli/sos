@@ -5,6 +5,14 @@ import { API_URL, DEFAULT_CAMERA_SOURCE, MOCK_CAMERAS, MOCK_INCIDENTS } from "..
 
 type CamMode = "laptop" | "mobile" | "manual";
 
+const MODES: { id: CamMode; label: string; hint: string }[] = [
+  { id: "laptop", label: "Laptop", hint: "Built-in webcam · source 0" },
+  { id: "mobile", label: "Mobile", hint: "Phone IP-camera app" },
+  { id: "manual", label: "Manual IP", hint: "Any http / rtsp URL" },
+];
+
+const STAGES = ["Capture", "Pose", "Track", "Fall", "Still", "Score"];
+
 function load(key: string, fallback: string): string {
   try {
     return localStorage.getItem(key) ?? fallback;
@@ -21,13 +29,8 @@ function save(key: string, value: string): void {
   }
 }
 
-const PILL = (active: boolean): string =>
-  `rounded-md px-3.5 py-1.5 font-mono text-xs font-semibold tracking-wide transition-colors ${
-    active ? "bg-[#16130e] text-white" : "bg-[#e9e5d8] text-[#57534a] hover:bg-[#dcd6c4]"
-  }`;
-
 const INPUT =
-  "min-w-60 flex-1 rounded-md border border-[#d8d2c2] bg-[#faf9f5] px-3 py-2 font-mono text-xs focus:border-[#16130e] focus:outline-none";
+  "w-full rounded-md border border-[#d8d2c2] bg-[#faf9f5] px-3 py-2 font-mono text-xs focus:border-[#16130e] focus:outline-none";
 
 export default function Dashboard() {
   const [mode, setMode] = useState<CamMode>(() =>
@@ -57,57 +60,98 @@ export default function Dashboard() {
         <StatCard label="Pipeline" value="Armed" sub="local · no cloud calls" glyph={<IconSiren />} />
       </div>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
-        {/* Camera panel */}
-        <Card className="xl:col-span-2">
-          <CardTitle
-            right={<span className="font-mono text-[11px] text-[#a8a08a]">{API_URL}</span>}
-          >
-            Live feed · Cam 01
-          </CardTitle>
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <button className={PILL(mode === "laptop")} onClick={() => setMode("laptop")}>
-              LAPTOP
-            </button>
-            <button className={PILL(mode === "mobile")} onClick={() => setMode("mobile")}>
-              MOBILE
-            </button>
-            <button className={PILL(mode === "manual")} onClick={() => setMode("manual")}>
-              MANUAL IP
-            </button>
-          </div>
-          {mode === "mobile" && (
-            <input
-              value={mobileUrl}
-              onChange={(e) => {
-                setMobileUrl(e.target.value);
-                save("sos.cam.mobile", e.target.value);
-              }}
-              placeholder="http://192.168.1.33:8080/video"
-              spellCheck={false}
-              className={`${INPUT} mb-3 w-full`}
-            />
-          )}
-          {mode === "manual" && (
-            <input
-              value={manualUrl}
-              onChange={(e) => {
-                setManualUrl(e.target.value);
-                save("sos.cam.manual", e.target.value);
-              }}
-              placeholder="http://192.168.1.50:8080/video  ·  rtsp://user:pass@host/…"
-              spellCheck={false}
-              className={`${INPUT} mb-3 w-full`}
-            />
-          )}
-          <CameraFeed source={activeSource} apiNote={API_URL} />
-          <p className="mt-3 font-mono text-[11px] leading-relaxed text-[#a8a08a]">
-            YOLO pose → ByteTrack → fall + inactivity, drawn on the frame by the backend.
-          </p>
-        </Card>
+      {/* HERO camera panel — full width */}
+      <Card>
+        <CardTitle
+          right={<span className="font-mono text-[11px] text-[#a8a08a]">{API_URL}</span>}
+        >
+          Live feed · Cam 01 · Main hallway
+        </CardTitle>
 
-        {/* Night log */}
-        <Card>
+        {/* Source rail */}
+        <div className="mb-4 grid grid-cols-1 gap-2 md:grid-cols-3">
+          {MODES.map((m) => {
+            const active = mode === m.id;
+            return (
+              <button
+                key={m.id}
+                onClick={() => setMode(m.id)}
+                className={`rounded-lg border px-4 py-3 text-left transition-colors ${
+                  active
+                    ? "border-[#16130e] bg-[#16130e] text-white"
+                    : "border-[#e2ddd0] bg-[#faf9f5] hover:border-[#a8a08a]"
+                }`}
+              >
+                <span className="flex items-center justify-between">
+                  <span className="font-mono text-xs font-bold tracking-widest">{m.label.toUpperCase()}</span>
+                  <span
+                    className={`h-2 w-2 rounded-full ${active ? "rec-dot bg-emerald-400" : "bg-[#d8d2c2]"}`}
+                  />
+                </span>
+                <span className={`mt-1 block text-xs ${active ? "text-[#a8a08a]" : "text-[#a8a08a]"}`}>
+                  {m.hint}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {mode === "mobile" && (
+          <input
+            value={mobileUrl}
+            onChange={(e) => {
+              setMobileUrl(e.target.value);
+              save("sos.cam.mobile", e.target.value);
+            }}
+            placeholder="http://192.168.1.33:8080/video"
+            spellCheck={false}
+            className={`${INPUT} mb-4`}
+          />
+        )}
+        {mode === "manual" && (
+          <input
+            value={manualUrl}
+            onChange={(e) => {
+              setManualUrl(e.target.value);
+              save("sos.cam.manual", e.target.value);
+            }}
+            placeholder="http://192.168.1.50:8080/video  ·  rtsp://user:pass@host/…"
+            spellCheck={false}
+            className={`${INPUT} mb-4`}
+          />
+        )}
+
+        <CameraFeed source={activeSource} apiNote={API_URL} />
+
+        {/* Legend + pipeline rail */}
+        <div className="mt-4 flex flex-col gap-3 border-t border-[#e2ddd0] pt-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[11px] text-[#57534a]">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-sm bg-[#16a34a]" /> TRACKING
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-sm bg-[#f59e0b]" /> POSSIBLE FALL
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-sm bg-[#c81e1e]" /> EMERGENCY
+            </span>
+          </div>
+          <ol className="flex flex-wrap items-center gap-1 font-mono text-[11px]">
+            {STAGES.map((s, idx) => (
+              <li key={s} className="flex items-center gap-1">
+                <span className="rounded bg-[#16130e] px-2 py-0.5 font-semibold text-emerald-400">
+                  {s.toUpperCase()}
+                </span>
+                {idx < STAGES.length - 1 && <span className="text-[#d8d2c2]">→</span>}
+              </li>
+            ))}
+          </ol>
+        </div>
+      </Card>
+
+      {/* Bottom row: night log + watch note */}
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+        <Card className="xl:col-span-2">
           <CardTitle right={<a href="/alerts" className="font-mono text-[11px] font-semibold text-[#c81e1e] hover:underline">QUEUE →</a>}>
             Night log
           </CardTitle>
@@ -132,6 +176,23 @@ export default function Dashboard() {
               </li>
             ))}
           </ol>
+        </Card>
+
+        <Card>
+          <CardTitle>On watch</CardTitle>
+          <p className="text-sm leading-relaxed text-[#57534a]">
+            The desk watches <strong className="text-[#16130e]">fall → stillness → distress</strong> and
+            only raises a hand when the evidence stacks up. Every red row still needs your eyes before it
+            means anything.
+          </p>
+          <div className="mt-4 rounded-lg bg-[#16130e] p-4">
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-[#a8a08a]">Score bands</p>
+            <ul className="mt-2 flex flex-col gap-1.5 font-mono text-xs">
+              <li className="flex justify-between"><span className="text-[#a8a08a]">0–39</span><span className="text-white">QUIET</span></li>
+              <li className="flex justify-between"><span className="text-[#a8a08a]">40–69</span><span className="text-amber-400">WATCHING</span></li>
+              <li className="flex justify-between"><span className="text-[#a8a08a]">70–100</span><span className="text-red-400">ALERT</span></li>
+            </ul>
+          </div>
         </Card>
       </div>
     </div>
