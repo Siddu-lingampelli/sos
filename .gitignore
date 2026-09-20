@@ -32,9 +32,10 @@ Thumbs.db
 postgres-data/
 pgdata/
 
-# Models / media (large, local-only)
-models/
+# ML weights / media (large, local-only) — NOTE: must not match backend/app/models/
 *.pt
+/models/
+*.onnx
 *.onnx
 *.mp4
 *.avi
