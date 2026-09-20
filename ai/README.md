@@ -1,11 +1,19 @@
-# AI — SilentSOS detection pipeline (Levels 3-7)
+# AI — SilentSOS detection pipeline
 
-- `vision/` — OpenCV capture + YOLO Pose + ByteTrack + fall logic (L3-L5)
-- `audio/` — Silero VAD + faster-whisper keywords + distress classifier (L6)
-- `engine/` — Emergency Confidence Engine fusion 0-100 (L7)
+- `vision/` — OpenCV capture + YOLO Pose + ByteTrack + fall logic + inactivity (L3-L5 ✅)
+- `audio/` — mic/WAV → Silero VAD → faster-whisper keywords + distress classifier (L6 ✅)
+- `engine/` — Emergency Confidence Engine fusion 0-100 (**Level 7 — not built yet**)
 
-Level 1: env manifest only. Heavy model installs happen per-level to keep foundation light.
-See `requirements.txt`. Create venv separately from backend if GPU/torch needed:
+## Audio quickstart (Level 6)
+
 ```powershell
 python -m venv ai\venv; ai\venv\Scripts\Activate.ps1; pip install -r ai\requirements.txt
+cd ai\audio
+python run_audio.py --list-devices            # find your mic id
+python run_audio.py --source mic              # live: speak / play test sounds
+python run_audio.py --source test.wav         # file: 16kHz mono WAV
+python run_audio.py --source mic --keywords "help,fire"   # custom keywords
 ```
+
+First run downloads Silero VAD (~2MB, torch.hub) and whisper-tiny (~75MB) once.
+Events printed: `SPEECH_DETECTED`, `DISTRESS_KEYWORD`, `DISTRESS_SOUND`.
