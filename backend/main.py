@@ -9,8 +9,9 @@ from sqlalchemy.exc import OperationalError
 
 from app.core.config import settings
 from app.api.api import api_router
-from app.db.session import Base, engine
-from app.models import User, Location, Camera, Incident, DetectionEvent, Alert
+from app.db.session import Base, engine, SessionLocal
+from app.models import User, Location, Camera, Incident, DetectionEvent, Alert, RoleEnum
+from app.core.security import get_password_hash
 from app.core.audio_service import start_audio_service
 
 app = FastAPI(title="SilentSOS API", version="0.2.0-level2")
@@ -26,12 +27,29 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup():
     start_audio_service()
-
-# Initialize DB tables explicitly for dev (in prod we use alembic/migrations)
-try:
-    Base.metadata.create_all(bind=engine)
-except OperationalError:
-    print("WARNING: Cannot connect to PostgreSQL. Assuming offline mode or tests.")
+    
+    # Initialize DB tables explicitly for dev
+    try:
+        Base.metadata.create_all(bind=engine)
+        
+        # Seed default admin if none exists so login actually works
+        db = SessionLocal()
+        try:
+            admin = db.query(User).filter(User.email == "admin@silentsos.com").first()
+            if not admin:
+                new_admin = User(
+                    email="admin@silentsos.com",
+                    name="System Admin",
+                    password_hash=get_password_hash("admin123"),
+                    role=RoleEnum.ADMIN
+                )
+                db.add(new_admin)
+                db.commit()
+                print("Seeded default admin (admin@silentsos.com / admin123)")
+        finally:
+            db.close()
+    except OperationalError:
+        print("WARNING: Cannot connect to PostgreSQL. Assuming offline mode or tests.")
 
 app.include_router(api_router, prefix="/api")
 

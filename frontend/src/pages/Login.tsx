@@ -22,9 +22,8 @@ export default function Login() {
         setToken(tok.access_token);
         navigate("/");
       })
-      .catch(() => {
-        // Backend down (demo desk): enter shell without a token; pages fall back gracefully.
-        navigate("/");
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : "Access denied or backend unreachable.");
       })
       .finally(() => setBusy(false));
   };

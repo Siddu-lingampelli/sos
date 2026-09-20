@@ -95,10 +95,22 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   const token = getToken();
   if (token) headers["Authorization"] = `Bearer ${token}`;
-  const res = await fetch(`${API_URL}${path}`, { ...init, headers: { ...headers, ...(init?.headers ?? {}) } });
+  
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, { ...init, headers: { ...headers, ...(init?.headers ?? {}) } });
+  } catch (err) {
+    throw new Error(`Fetch failed to reach ${API_URL}${path} (Backend offline?)`);
+  }
+
   if (!res.ok) {
-    if (res.status === 401) clearToken();
-    throw new Error(`API ${res.status} on ${path}`);
+    if (res.status === 401) {
+      clearToken();
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
+    }
+    throw new Error(`API error ${res.status} on ${path}`);
   }
   return (await res.json()) as T;
 }
