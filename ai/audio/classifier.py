@@ -45,8 +45,9 @@ class DistressClassifier:
             loud = min(1.0, rms / (cfg.SCREAM_RMS_GATE * 4))
             pitch = min(1.0, max(0.0, centroid / (cfg.SCREAM_CENTROID_HZ * 2)))
             raw = 0.5 * loud + 0.3 * pitch + 0.2 * hf
-        # EMA smoothing ~ SCREAM_MIN_MS sustain requirement
-        alpha = min(1.0, cfg.WINDOW_MS / max(1, cfg.SCREAM_MIN_MS))
+        # EMA smoothing: alpha=0.5 needs ~2 consecutive hot windows to
+        # cross threshold, so an isolated loud blip can't fire DISTRESS_SOUND
+        alpha = 0.5
         self._smooth = alpha * raw + (1 - alpha) * self._smooth
         return round(float(self._smooth), 3)
 

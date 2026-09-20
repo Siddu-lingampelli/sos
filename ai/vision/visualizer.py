@@ -28,8 +28,12 @@ class Visualizer:
         
         # Draw detections
         for person in persons:
-            # Box — color by fall state (Level 4)
-            x1, y1, x2, y2 = map(int, person["box"])
+            # Box — color by fall state (Level 4); skip malformed entries
+            # instead of killing the whole frame (and the stream thread)
+            try:
+                x1, y1, x2, y2 = map(int, person["box"])
+            except (KeyError, TypeError, ValueError):
+                continue
             state = person.get("fall_state", "NORMAL")
             color = self.STATE_COLORS.get(state, (0, 0, 255))
             cv2.rectangle(out_frame, (x1, y1), (x2, y2), color, 2)
