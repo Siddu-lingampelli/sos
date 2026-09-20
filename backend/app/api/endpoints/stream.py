@@ -11,11 +11,16 @@ from ...core.config import settings
 ai_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../ai"))
 if ai_path not in sys.path:
     sys.path.append(ai_path)
+vision_path = os.path.join(ai_path, "vision")
+if vision_path not in sys.path:
+    sys.path.append(vision_path)
 
 try:
-    from vision.camera import CameraStream
-    from vision.detector import PoseDetector
-    from vision.visualizer import Visualizer
+    from camera import CameraStream
+    from tracker import PersonTracker
+    from fall_detector import FallDetector
+    from visualizer import Visualizer
+    from config import DEFAULT
     AI_AVAILABLE = True
 except ImportError as e:
     AI_AVAILABLE = False
@@ -32,7 +37,8 @@ def generate_frames(source: str):
     vid_source = int(source) if source.isdigit() else source
 
     stream = CameraStream(source=vid_source, max_fps=15) # 15 FPS max for web streaming performance
-    detector = PoseDetector(model_path=os.path.join(ai_path, "vision", "yolo11n-pose.pt"))
+    tracker = PersonTracker(model_path=os.path.join(vision_path, "yolo11n-pose.pt"), cfg=DEFAULT)
+    fall = FallDetector(cfg=DEFAULT)
     visualizer = Visualizer()
     
     last_frame_time = time.time()
@@ -51,8 +57,10 @@ def generate_frames(source: str):
                 current_fps = (alpha * (1.0 / elapsed)) + ((1 - alpha) * current_fps)
             last_frame_time = current_time
 
-            # Detection
-            persons, latency = detector.process_frame(frame)
+            # Detection + tracking + fall state
+            persons, latency = tracker.process(frame)
+            for p in persons:
+                fall.update(p, tracker.track_history(p.get("track_id", -1)))
             
             # Visualizer
             out_frame = visualizer.draw(frame, persons, current_fps, latency)

@@ -12,6 +12,13 @@ class Visualizer:
         self.keypoint_colors = (0, 255, 0)
         self.bone_colors = (255, 0, 0)
 
+    STATE_COLORS = {
+        "NORMAL": (0, 200, 0),
+        "POSSIBLE_FALL": (0, 165, 255),
+        "FALL_CONFIRMED": (0, 0, 255),
+        "RECOVERED": (255, 0, 0),
+    }
+
     def draw(self, frame: np.ndarray, persons: list, fps: float, latency: float) -> np.ndarray:
         """
         Draws bounding boxes, skeletons, and telemetry onto the frame.
@@ -21,9 +28,16 @@ class Visualizer:
         
         # Draw detections
         for person in persons:
-            # Box
+            # Box — color by fall state (Level 4)
             x1, y1, x2, y2 = map(int, person["box"])
-            cv2.rectangle(out_frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+            state = person.get("fall_state", "NORMAL")
+            color = self.STATE_COLORS.get(state, (0, 0, 255))
+            cv2.rectangle(out_frame, (x1, y1), (x2, y2), color, 2)
+            tid = person.get("track_id", -1)
+            ang = person.get("angle")
+            ang_txt = f"{ang:.0f}d" if ang is not None else "?"
+            cv2.putText(out_frame, f"ID{tid} {state} {ang_txt}", (x1, max(0, y1 - 8)),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 2)
             
             # Keypoints & Skeleton
             keypoints = person.get("keypoints", [])
@@ -57,7 +71,7 @@ class Visualizer:
         # Draw UI Overlay (Telemetry)
         cv2.rectangle(out_frame, (0, 0), (w, 40), (0, 0, 0), -1)
         
-        cv2.putText(out_frame, f"SilentSOS - L3 Vision", (10, 25), 
+        cv2.putText(out_frame, f"SilentSOS - L4 Track+Fall", (10, 25),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
         cv2.putText(out_frame, f"FPS: {fps:.1f}", (w - 250, 25), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
