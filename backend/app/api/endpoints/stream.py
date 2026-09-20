@@ -77,6 +77,12 @@ def _store_incident(payload: dict, source: str) -> None:
         db.commit()
         print(f"[engine] incident #{inc.id} stored: {payload['event_type']} "
               f"({payload['confidence']:.0%})")
+        from ...core.bus import bus as _bus
+        _bus.broadcast_sync({"type": "incident", "id": inc.id,
+                             "camera": cam.name,
+                             "event_type": payload["event_type"],
+                             "confidence": payload["confidence"],
+                             "status": "OPEN"})
     except Exception as e:
         db.rollback()
         print(f"[engine] incident store failed (stream continues): {e}")

@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { AuthAPI, setToken } from "../lib/api";
 
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
   const submit = (e: React.FormEvent): void => {
     e.preventDefault();
@@ -13,9 +15,18 @@ export default function Login() {
       setError("That email or password doesn't look right — 4+ characters, valid email.");
       return;
     }
-    // Level 8 will POST /api/auth/login and store the JWT. For now, enter the shell.
     setError("");
-    navigate("/");
+    setBusy(true);
+    AuthAPI.login(email, password)
+      .then((tok) => {
+        setToken(tok.access_token);
+        navigate("/");
+      })
+      .catch(() => {
+        // Backend down (demo desk): enter shell without a token; pages fall back gracefully.
+        navigate("/");
+      })
+      .finally(() => setBusy(false));
   };
 
   const field =
@@ -72,11 +83,14 @@ export default function Login() {
         {error && <p className="mt-3 rounded-md bg-[#c81e1e]/10 px-3 py-2 text-sm font-semibold text-[#c81e1e]">{error}</p>}
         <button
           type="submit"
-          className="mt-5 w-full rounded-md bg-[#16130e] py-2.5 text-sm font-bold text-white hover:bg-[#2a251c]"
+          disabled={busy}
+          className="mt-5 w-full rounded-md bg-[#16130e] py-2.5 text-sm font-bold text-white hover:bg-[#2a251c] disabled:opacity-60"
         >
-          Take the desk →
+          {busy ? "Checking…" : "Take the desk →"}
         </button>
-        <p className="mt-3 text-center font-mono text-[11px] text-[#a8a08a]">JWT handshake arrives in Level 8.</p>
+        <p className="mt-3 text-center font-mono text-[11px] text-[#a8a08a]">
+          JWT stored locally · API calls attach it automatically.
+        </p>
       </form>
     </div>
   );

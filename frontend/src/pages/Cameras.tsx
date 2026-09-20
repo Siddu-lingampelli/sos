@@ -1,11 +1,51 @@
+import { useEffect, useState } from "react";
 import { Card, CardTitle } from "../components/ui";
-import { MOCK_CAMERAS } from "../lib/api";
+import { DataAPI, MOCK_CAMERAS } from "../lib/api";
+
+interface Row {
+  id: number;
+  name: string;
+  location: string;
+  status: "online" | "offline";
+}
 
 export default function Cameras() {
+  const [rows, setRows] = useState<Row[]>(
+    MOCK_CAMERAS.map((c) => ({ id: c.id, name: c.name, location: c.location, status: c.status })),
+  );
+  const [live, setLive] = useState(false);
+
+  useEffect(() => {
+    let dead = false;
+    Promise.all([DataAPI.cameras(), DataAPI.locations()])
+      .then(([cams, locs]) => {
+        if (dead) return;
+        const byId = new Map(locs.map((l) => [l.id, `${l.name} · ${l.building} ${l.floor}`.trim()]));
+        setRows(
+          cams.map((c) => ({
+            id: c.id,
+            name: c.name,
+            location: byId.get(c.location_id) ?? `Location #${c.location_id}`,
+            status: c.status === "active" || c.status === "online" ? "online" : "offline",
+          })),
+        );
+        setLive(true);
+      })
+      .catch(() => {
+        /* offline — demo rows */
+      });
+    return () => {
+      dead = true;
+    };
+  }, []);
+
   return (
     <div className="flex flex-col gap-5">
+      <p className="font-mono text-[11px] tracking-wider text-[#57534a]">
+        SOURCE <strong className={live ? "text-[#3f6212]" : "text-[#a8a08a]"}>{live ? "● BACKEND" : "○ DEMO"}</strong>
+      </p>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {MOCK_CAMERAS.map((c) => (
+        {rows.map((c) => (
           <Card key={c.id}>
             <div className="flex items-start justify-between gap-3">
               <div>

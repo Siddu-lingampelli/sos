@@ -73,5 +73,20 @@ class IncidentResponse(IncidentBase):
     id: int
     camera_id: int
     timestamp: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
+
+class IncidentUpdate(BaseModel):
+    status: IncidentStatus
+
+class DetectionEventResponse(BaseModel):
+    id: int
+    incident_id: Optional[int] = None
+    event_type: str
+    value: Optional[str] = None
+    timestamp: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+class IncidentDetail(IncidentResponse):
+    events: list["DetectionEventResponse"] = []

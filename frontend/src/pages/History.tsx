@@ -1,15 +1,51 @@
+import { useEffect, useState } from "react";
 import { Card, ConfidenceBar, StatusBadge } from "../components/ui";
-import { MOCK_INCIDENTS } from "../lib/api";
+import type { Incident } from "../lib/api";
+import { DataAPI, MOCK_INCIDENTS } from "../lib/api";
 
 export default function History() {
+  const [items, setItems] = useState<Incident[]>(MOCK_INCIDENTS);
+  const [live, setLive] = useState(false);
+
+  useEffect(() => {
+    let dead = false;
+    DataAPI.incidents()
+      .then(
+        (rows) =>
+          !dead &&
+          (setItems(
+            rows.map((a) => ({
+              id: a.id,
+              camera: `Cam #${a.camera_id}`,
+              location: "—",
+              eventType: a.event_type,
+              confidence: Math.round(a.confidence * 100),
+              time: new Date(a.timestamp).toLocaleString(),
+              status: a.status,
+            })),
+          ),
+          setLive(true)),
+      )
+      .catch(() => {
+        /* offline — demo rows */
+      });
+    return () => {
+      dead = true;
+    };
+  }, []);
+
   return (
     <Card>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[#57534a]">
-          {MOCK_INCIDENTS.length} entries
+          {items.length} entries
         </h2>
-        <span className="rounded-md bg-[#e9e5d8] px-2.5 py-1 font-mono text-[11px] text-[#57534a]">
-          DEMO ROWS — LIVE API IN LEVEL 8
+        <span
+          className={`rounded-md px-2.5 py-1 font-mono text-[11px] font-semibold ${
+            live ? "bg-[#16130e] text-emerald-400" : "bg-[#e9e5d8] text-[#57534a]"
+          }`}
+        >
+          {live ? "● LIVE FROM BACKEND" : "DEMO ROWS — START BACKEND FOR LIVE"}
         </span>
       </div>
       <div className="overflow-x-auto">
@@ -25,7 +61,7 @@ export default function History() {
             </tr>
           </thead>
           <tbody>
-            {MOCK_INCIDENTS.map((i) => (
+            {items.map((i) => (
               <tr key={i.id} className="border-b border-[#efece2] last:border-0 hover:bg-[#faf9f5]">
                 <td className="py-3 pr-4 font-mono font-semibold">#{i.id}</td>
                 <td className="py-3 pr-4">

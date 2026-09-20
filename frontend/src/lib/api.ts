@@ -56,3 +56,113 @@ export const MOCK_CAMERAS: Camera[] = [
 export function streamUrl(source: string): string {
   return `${API_URL}/api/stream/video?source=${encodeURIComponent(source)}`;
 }
+
+export function wsUrl(): string {
+  return `${API_URL.replace(/^http/, "ws")}/api/ws/alerts`;
+}
+
+/* ---- auth token (localStorage; Level 8 minimal session) ---- */
+
+const TOKEN_KEY = "sos.token";
+
+export function getToken(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setToken(token: string): void {
+  try {
+    localStorage.setItem(TOKEN_KEY, token);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearToken(): void {
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+/* ---- typed API client (throws on HTTP error) ---- */
+
+async function api<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const token = getToken();
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const res = await fetch(`${API_URL}${path}`, { ...init, headers: { ...headers, ...(init?.headers ?? {}) } });
+  if (!res.ok) {
+    if (res.status === 401) clearToken();
+    throw new Error(`API ${res.status} on ${path}`);
+  }
+  return (await res.json()) as T;
+}
+
+export interface ApiIncident {
+  id: number;
+  camera_id: number;
+  event_type: string;
+  confidence: number;
+  timestamp: string;
+  status: IncidentStatus;
+  snapshot_path?: string | null;
+}
+
+export interface ApiCamera {
+  id: number;
+  name: string;
+  status: string;
+  location_id: number;
+}
+
+export interface ApiLocation {
+  id: number;
+  name: string;
+  building: string;
+  floor: string;
+}
+
+/** Adapt backend rows to the dashboard Incident shape. */
+export function toIncident(a: ApiIncident, cameraName?: string, locationName?: string): Incident {
+  let time = a.timestamp;
+  try {
+    time = new Date(a.timestamp).toLocaleString();
+  } catch {
+    /* keep raw */
+  }
+  return {
+    id: a.id,
+    camera: cameraName ?? `Cam #${a.camera_id}`,
+    location: locationName ?? "—",
+    eventType: a.event_type,
+    confidence: Math.round(a.confidence * 100),
+    time,
+    status: a.status,
+  };
+}
+
+export const AuthAPI = {
+  login: (email: string, password: string) =>
+    api<{ access_token: string; token_type: string }>("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
+};
+
+export const DataAPI = {
+  incidents: () => api<ApiIncident[]>("/api/incidents/"),
+  active: () => api<ApiIncident[]>("/api/incidents/active"),
+  setStatus: (id: number, status: IncidentStatus) =>
+    api<ApiIncident>(`/api/incidents/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }),
+  cameras: () => api<ApiCamera[]>("/api/cameras/"),
+  locations: () => api<ApiLocation[]>("/api/locations/"),
+  health: () => api<{ status: string; api: string; db: string }>("/api/health"),
+};

@@ -1,12 +1,44 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { Card, ConfidenceBar, StatusBadge } from "../components/ui";
-import { MOCK_INCIDENTS } from "../lib/api";
+import type { Incident } from "../lib/api";
+import { DataAPI, MOCK_INCIDENTS } from "../lib/api";
 
 const STAGES = ["Fall transition", "Observation window", "Inactivity check", "Confidence score", "Human verdict"];
 
 export default function IncidentDetail() {
   const { id } = useParams();
-  const incident = MOCK_INCIDENTS.find((i) => String(i.id) === id);
+  const [incident, setIncident] = useState<Incident | undefined>(() =>
+    MOCK_INCIDENTS.find((i) => String(i.id) === id),
+  );
+
+  useEffect(() => {
+    const num = Number(id);
+    if (!Number.isFinite(num)) return;
+    let dead = false;
+    DataAPI.incidents()
+      .then((rows) => {
+        if (dead) return;
+        const found = rows.find((a) => a.id === num);
+        if (found) {
+          setIncident({
+            id: found.id,
+            camera: `Cam #${found.camera_id}`,
+            location: "—",
+            eventType: found.event_type,
+            confidence: Math.round(found.confidence * 100),
+            time: new Date(found.timestamp).toLocaleString(),
+            status: found.status,
+          });
+        }
+      })
+      .catch(() => {
+        /* offline — mock row */
+      });
+    return () => {
+      dead = true;
+    };
+  }, [id]);
 
   if (!incident) {
     return (

@@ -1,15 +1,75 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Card, ConfidenceBar, IconCheck, StatusBadge } from "../components/ui";
 import type { Incident, IncidentStatus } from "../lib/api";
-import { MOCK_INCIDENTS } from "../lib/api";
+import { DataAPI, MOCK_INCIDENTS } from "../lib/api";
+import { useLiveAlerts } from "../lib/useLiveAlerts";
+import type { LiveIncident } from "../lib/useLiveAlerts";
+
+function adapt(id: number, camera: string, eventType: string, confidence01: number): Incident {
+  return {
+    id,
+    camera,
+    location: "Live feed",
+    eventType,
+    confidence: Math.round(confidence01 * 100),
+    time: new Date().toLocaleTimeString(),
+    status: "OPEN",
+  };
+}
 
 export default function Alerts() {
-  const [items, setItems] = useState<Incident[]>(() => MOCK_INCIDENTS.filter((i) => i.status === "OPEN"));
+  const [items, setItems] = useState<Incident[]>(MOCK_INCIDENTS.filter((i) => i.status === "OPEN"));
   const [done, setDone] = useState<Incident[]>([]);
+  const [live, setLive] = useState(false);
+
+  useEffect(() => {
+    let dead = false;
+    DataAPI.active()
+      .then(
+        (rows) =>
+          !dead &&
+          setItems(
+            rows.map((a) => ({
+              id: a.id,
+              camera: `Cam #${a.camera_id}`,
+              location: "—",
+              eventType: a.event_type,
+              confidence: Math.round(a.confidence * 100),
+              time: new Date(a.timestamp).toLocaleString(),
+              status: a.status,
+            })),
+          ),
+      )
+      .catch(() => {
+        /* stay on local rows when backend is down */
+      });
+    return () => {
+      dead = true;
+    };
+  }, []);
+
+  const onIncident = useCallback((inc: LiveIncident) => {
+    setLive(true);
+    setItems((prev) =>
+      prev.some((i) => i.id === inc.id)
+        ? prev
+        : [adapt(inc.id, inc.camera, inc.event_type, inc.confidence), ...prev],
+    );
+  }, []);
+
+  const onUpdate = useCallback((id: number, status: string) => {
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    void status;
+  }, []);
+
+  useLiveAlerts(onIncident, onUpdate);
 
   const decide = (id: number, status: IncidentStatus): void => {
     const found = items.find((i) => i.id === id);
+    DataAPI.setStatus(id, status).catch(() => {
+      /* backend down — decide locally */
+    });
     if (!found) return;
     setItems((prev) => prev.filter((i) => i.id !== id));
     setDone((prev) => [{ ...found, status }, ...prev]);
@@ -17,6 +77,11 @@ export default function Alerts() {
 
   return (
     <div className="flex flex-col gap-5">
+      <p className="font-mono text-[11px] tracking-wider text-[#57534a]">
+        FEED <strong className={live ? "text-[#3f6212]" : "text-[#a8a08a]"}>{live ? "● LIVE" : "○ LOCAL"}</strong>
+        {"  ·  "}NEW FIRINGS ARRIVE WITHOUT REFRESH
+      </p>
+
       {items.length === 0 && (
         <Card>
           <div className="flex items-center gap-3">
