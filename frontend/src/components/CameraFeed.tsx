@@ -3,16 +3,17 @@ import { streamUrl } from "../lib/api";
 
 interface Props {
   source: string;
+  rotate: number;
   apiNote: string;
 }
 
 /** Live MJPEG feed — fills its parent (viewfinder chrome overlaid). */
-export default function CameraFeed({ source, apiNote }: Props) {
+export default function CameraFeed({ source, rotate, apiNote }: Props) {
   const [offline, setOffline] = useState(false);
 
   useEffect(() => {
     setOffline(false);
-  }, [source]);
+  }, [source, rotate]);
 
   if (!source) {
     return (
@@ -39,8 +40,8 @@ export default function CameraFeed({ source, apiNote }: Props) {
   return (
     <div className="relative h-full min-h-[280px] w-full overflow-hidden rounded-lg bg-[#16130e]">
       <img
-        key={source}
-        src={streamUrl(source)}
+        key={`${source}|${rotate}`}
+        src={streamUrl(source, rotate)}
         alt="Live AI camera feed"
         className="absolute inset-0 h-full w-full object-cover"
         onError={() => setOffline(true)}

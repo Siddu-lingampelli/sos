@@ -53,8 +53,8 @@ export const MOCK_CAMERAS: Camera[] = [
   { id: 2, name: "Corridor East", location: "Hostel Block B · Floor 1", status: "offline", source: "" },
 ];
 
-export function streamUrl(source: string): string {
-  return `${API_URL}/api/stream/video?source=${encodeURIComponent(source)}`;
+export function streamUrl(source: string, rotate = 0): string {
+  return `${API_URL}/api/stream/video?source=${encodeURIComponent(source)}&rotate=${rotate}`;
 }
 
 export function wsUrl(): string {

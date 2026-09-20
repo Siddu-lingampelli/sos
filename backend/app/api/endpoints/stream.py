@@ -95,7 +95,25 @@ _lock = threading.Lock()
 _states: dict[str, dict] = {}
 
 
-def _inference_loop(source_key: str, vid_source):
+def _parse_rotate(value) -> int:
+    try:
+        r = int(value) % 360
+    except (TypeError, ValueError):
+        return 0
+    return r if r in (0, 90, 180, 270) else 0
+
+
+def _apply_rotate(frame, rotate: int):
+    if rotate == 90:
+        return cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+    if rotate == 180:
+        return cv2.rotate(frame, cv2.ROTATE_180)
+    if rotate == 270:
+        return cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    return frame
+
+
+def _inference_loop(source_key: str, vid_source, rotate: int, source: str):
     st = _states[source_key]
     stream = CameraStream(source=vid_source, max_fps=15)
     tracker = PersonTracker(model_path=os.path.join(vision_path, "yolo11n-pose.pt"), cfg=DEFAULT)
@@ -113,6 +131,9 @@ def _inference_loop(source_key: str, vid_source):
         for ret, frame in stream.read_frames():
             if not ret or frame is None or st.get("stop"):
                 break
+            # Straighten sideways phone feeds BEFORE detection so pose
+            # geometry, tracking, and fall math all see upright frames
+            frame = _apply_rotate(frame, rotate)
             n += 1
             now = time.time()
             dt = now - last
@@ -155,27 +176,30 @@ def _inference_loop(source_key: str, vid_source):
             _states.pop(source_key, None)
 
 
-def _ensure_source(source: str):
+def _ensure_source(source: str, rotate: int) -> str:
+    """One inference thread per (source, rotation). Returns the state key."""
+    key = f"{source}|rot{rotate}"
     with _lock:
-        if source in _states:
-            return
+        if key in _states:
+            return key
         vid_source = int(source) if source.isdigit() else source
         st: dict = {"jpg": None, "stop": False}
-        _states[source] = st
-        t = threading.Thread(target=_inference_loop, args=(source, vid_source), daemon=True)
+        _states[key] = st
+        t = threading.Thread(target=_inference_loop, args=(key, vid_source, rotate, source), daemon=True)
         st["thread"] = t
         t.start()
+        return key
 
 
-def generate_frames(source: str):
+def generate_frames(source: str, rotate: int):
     if not AI_AVAILABLE:
         return
-    _ensure_source(source)
+    key = _ensure_source(source, rotate)
     served = False
     idle = 0
     while True:
         with _lock:
-            st = _states.get(source)
+            st = _states.get(key)
             jpg = st["jpg"] if st else None
         if jpg is not None:
             served = True
@@ -191,12 +215,13 @@ def generate_frames(source: str):
 
 
 @router.get("/video")
-def video_feed(source: str = ""):
-    """MJPEG stream. Pass ?source=http://phone-ip:8080/video. Laptop webcam (0) not used."""
+def video_feed(source: str = "", rotate: int = 0):
+    """MJPEG stream. ?source=http://phone-ip:8080/video &rotate=0|90|180|270."""
     if not AI_AVAILABLE:
         from fastapi.responses import JSONResponse
         return JSONResponse({"error": "AI modules missing"}, status_code=503)
     if not source:
         from fastapi.responses import JSONResponse
         return JSONResponse({"error": "No camera source — pass ?source=http://phone-ip:8080/video"}, status_code=400)
-    return StreamingResponse(generate_frames(source), media_type="multipart/x-mixed-replace; boundary=frame")
+    return StreamingResponse(generate_frames(source, _parse_rotate(rotate)),
+                             media_type="multipart/x-mixed-replace; boundary=frame")

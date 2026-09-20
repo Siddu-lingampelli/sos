@@ -21,6 +21,24 @@ export default function Dashboard() {
   const [items, setItems] = useState<Incident[]>(MOCK_INCIDENTS);
   const [live, setLive] = useState(false);
   const [dbState, setDbState] = useState("unknown");
+  const [rotate, setRotate] = useState<number>(() => {
+    try {
+      const v = Number(localStorage.getItem("sos.cam.rotate"));
+      return [0, 90, 180, 270].includes(v) ? v : 0;
+    } catch {
+      return 0;
+    }
+  });
+
+  const cycleRotate = (): void => {
+    const next = rotate === 0 ? 90 : rotate === 90 ? 180 : rotate === 180 ? 270 : 0;
+    setRotate(next);
+    try {
+      localStorage.setItem("sos.cam.rotate", String(next));
+    } catch {
+      /* ignore */
+    }
+  };
 
   useEffect(() => {
     let dead = false;
@@ -73,7 +91,6 @@ export default function Dashboard() {
   useLiveAlerts(onIncident);
 
   const openItems = items.filter((i) => i.status === "OPEN");
-  const modeLabel = mode === "laptop" ? "Laptop webcam" : mode === "mobile" ? "Mobile camera" : "Manual IP";
 
   return (
     <div className="flex flex-col gap-4 xl:h-full xl:min-h-0">
@@ -94,7 +111,22 @@ export default function Dashboard() {
       <div className={`dash-grid xl:min-h-0 xl:flex-1 ${mode === "laptop" ? "dash-desktop" : "dash-mobile"}`}>
         {/* VIDEO */}
         <Card className="dash-video flex min-h-[320px] flex-col xl:min-h-0">
-          <CardTitle right={<span className="font-mono text-[11px] text-[#a8a08a]">CAM 01 · {modeLabel.toUpperCase()}</span>}>
+          <CardTitle
+            right={
+              <span className="flex items-center gap-2">
+                <span className="font-mono text-[11px] text-[#a8a08a]">CAM 01</span>
+                {(mode === "mobile" || mode === "manual") && (
+                  <button
+                    onClick={cycleRotate}
+                    title="Rotate camera view"
+                    className="rounded-md bg-[#e9e5d8] px-2 py-1 font-mono text-[11px] font-bold text-[#57534a] hover:bg-[#dcd6c4]"
+                  >
+                    ⟳ {rotate}°
+                  </button>
+                )}
+              </span>
+            }
+          >
             Live feed
           </CardTitle>
           {(mode === "mobile" || mode === "manual") && (
@@ -114,7 +146,7 @@ export default function Dashboard() {
             />
           )}
           <div className="min-h-0 flex-1">
-            <CameraFeed source={activeSource} apiNote={API_URL} />
+            <CameraFeed source={activeSource} rotate={rotate} apiNote={API_URL} />
           </div>
           <div className="mt-3 hidden shrink-0 flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[11px] text-[#57534a] sm:flex">
             <span className="inline-flex items-center gap-1.5">
