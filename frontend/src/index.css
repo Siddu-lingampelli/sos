@@ -49,10 +49,10 @@ body {
 .dash-grid {
   display: grid;
   gap: 0.5rem;
-  /* sidebar lives outside this grid.
-     "using mobile camera" sketch: video owns the middle column full-height;
-     right column splits alerts (~40%) over logs (~60%). */
-  grid-template-columns: minmax(0, 1fr) 168px;
+  /* 1000x1300 reference: video ~40% / right rail ~60% of this grid,
+     video full-height middle, alerts (~40%) over logs (~60%) on the right. */
+  min-height: max(480px, calc(100dvh - 150px));
+  grid-template-columns: 2fr 3fr;
   grid-template-rows: minmax(0, 2fr) minmax(0, 3fr);
   grid-template-areas:
     "video alerts"
@@ -61,12 +61,12 @@ body {
 @media (min-width: 640px) {
   .dash-grid {
     gap: 0.75rem;
-    grid-template-columns: minmax(0, 1fr) 240px;
   }
 }
 @media (min-width: 1280px) {
   .dash-grid {
     /* "if computer" sketch: logs sit under the video, alerts span full height */
+    min-height: 0;
     grid-template-columns: minmax(0, 1fr) 280px;
     grid-template-rows: minmax(0, 1fr) auto;
     grid-template-areas:

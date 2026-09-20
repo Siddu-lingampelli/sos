@@ -155,9 +155,11 @@ export default function Layout() {
             <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#a8a08a]">{head.kicker}</p>
             <h1 className="font-display text-lg font-bold leading-tight tracking-tight">{head.title}</h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <ViewSwitch />
-            <Clock />
+            <span className="hidden sm:block">
+              <Clock />
+            </span>
             <span className="hidden h-4 w-px bg-[#e2ddd0] sm:block" />
             <span className="inline-flex items-center gap-1.5 rounded-md bg-[#16130e] px-2.5 py-1 font-mono text-[11px] font-semibold text-emerald-400">
               <span className="rec-dot h-1.5 w-1.5 rounded-full bg-emerald-400" />
