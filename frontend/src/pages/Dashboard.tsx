@@ -20,6 +20,7 @@ export default function Dashboard() {
   const { mode, mobileUrl, setMobileUrl, manualUrl, setManualUrl, activeSource } = useCamera();
   const [items, setItems] = useState<Incident[]>(MOCK_INCIDENTS);
   const [live, setLive] = useState(false);
+  const [dbState, setDbState] = useState("unknown");
 
   useEffect(() => {
     let dead = false;
@@ -41,6 +42,13 @@ export default function Dashboard() {
       )
       .catch(() => {
         if (!dead) setItems(MOCK_INCIDENTS);
+      });
+    DataAPI.health()
+      .then((h) => {
+        if (!dead) setDbState(h.db);
+      })
+      .catch(() => {
+        if (!dead) setDbState("down");
       });
     return () => {
       dead = true;
@@ -127,7 +135,18 @@ export default function Dashboard() {
             Logs
           </CardTitle>
           <ol className="dash-logs-list flex min-h-0 flex-1 flex-col divide-y divide-[#efece2] overflow-y-auto font-mono text-xs">
-            {items.slice(0, 8).map((i) => (
+            {items.length === 0 && (
+              <li className="flex items-baseline gap-3 py-1.5">
+                <span className="shrink-0 tabular-nums text-[#a8a08a]">--:--:--</span>
+                <span className="shrink-0 rounded bg-[#e9e5d8] px-1.5 py-0.5 text-[10px] font-bold tracking-widest text-[#57534a]">
+                  SYS
+                </span>
+                <span className="truncate text-[#33302a]">
+                  No incidents yet — run the feed and trigger a fall to see engine output here
+                </span>
+              </li>
+            )}
+            {items.slice(0, 6).map((i) => (
               <li key={i.id} className="flex items-baseline gap-3 py-1.5">
                 <span className="hidden shrink-0 tabular-nums text-[#a8a08a] min-[400px]:inline">{i.time}</span>
                 <span
@@ -138,10 +157,26 @@ export default function Dashboard() {
                   {i.status === "OPEN" ? "ALERT" : i.status}
                 </span>
                 <span className="truncate text-[#33302a]">
-                  {i.eventType} · score {i.confidence}
+                  {i.eventType} — {i.location} · score {i.confidence}
                 </span>
               </li>
             ))}
+            <li className="flex items-baseline gap-3 py-1.5">
+              <span className="shrink-0 tabular-nums text-[#a8a08a]">--:--:--</span>
+              <span className="shrink-0 rounded bg-[#e9e5d8] px-1.5 py-0.5 text-[10px] font-bold tracking-widest text-[#57534a]">
+                SYS
+              </span>
+              <span className="truncate text-[#33302a]">
+                Engine armed · fall + stillness + distress · backend db: {dbState}
+              </span>
+            </li>
+            <li className="flex items-baseline gap-3 py-1.5">
+              <span className="shrink-0 tabular-nums text-[#a8a08a]">--:--:--</span>
+              <span className="shrink-0 rounded bg-[#e9e5d8] px-1.5 py-0.5 text-[10px] font-bold tracking-widest text-[#57534a]">
+                AUDIO
+              </span>
+              <span className="truncate text-[#33302a]">VAD idle · keywords: help, emergency, please help</span>
+            </li>
           </ol>
         </Card>
 
