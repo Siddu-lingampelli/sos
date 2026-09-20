@@ -7,19 +7,19 @@ class FallConfig:
     # Torso angle (deg from vertical): 0=upright, 90=horizontal
     FALL_ANGLE_THRESHOLD: float = 55.0
     # BBox aspect w/h above which posture looks horizontal
-    FALL_ASPECT_THRESHOLD: float = 1.1
+    FALL_ASPECT_THRESHOLD: float = 0.9
     # Sudden hip-center drop (normalized by frame height per second) to qualify as "rapid"
-    FALL_VERTICAL_VELOCITY: float = 0.35
+    FALL_VERTICAL_VELOCITY: float = 0.20
     # Consecutive horizontal frames to go POSSIBLE_FALL -> FALL_CONFIRMED
-    CONFIRM_FRAMES: int = 8
+    CONFIRM_FRAMES: int = 3
     # Frames of upright + movement to go FALL_* -> RECOVERED -> NORMAL
-    RECOVERY_FRAMES: int = 10
+    RECOVERY_FRAMES: int = 4
     # Max history per track
     HISTORY_LEN: int = 30
-    # Minimum keypoint confidence to trust a joint
-    KP_CONF: float = 0.4
-    # Minimum YOLO box confidence
-    BOX_CONF: float = 0.15
+    # Minimum keypoint confidence to trust a joint (lower for fallen people)
+    KP_CONF: float = 0.25
+    # Minimum YOLO box confidence (increased to 0.45 to prevent detecting wires/ghosts)
+    BOX_CONF: float = 0.45
     # Inference image size (smaller = faster on CPU)
     IMGSZ: int = 416
     # Downscale huge camera frames (1080p phones) before YOLO, scale boxes back

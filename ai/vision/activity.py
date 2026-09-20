@@ -22,9 +22,9 @@ def speed_class(hist, window_sec: float = 1.0) -> str:
     import math
     dt = max(1e-3, pts[-1][0] - pts[0][0])
     v = math.hypot(pts[-1][1] - pts[0][1], pts[-1][2] - pts[0][2]) / dt
-    if v < 0.05:
+    if v < 0.02:
         return "still"
-    if v < 0.40:
+    if v < 0.15:
         return "walking"
     return "running"
 
