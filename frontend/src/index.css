@@ -50,9 +50,10 @@ body {
   display: grid;
   gap: 0.5rem;
   /* sidebar lives outside this grid.
-     video owns the full middle column; right column stacks alerts over logs.
-     one arrangement at every size — only the rail width adapts. */
+     "using mobile camera" sketch: video owns the middle column full-height;
+     right column splits alerts (~40%) over logs (~60%). */
   grid-template-columns: minmax(0, 1fr) 168px;
+  grid-template-rows: minmax(0, 2fr) minmax(0, 3fr);
   grid-template-areas:
     "video alerts"
     "video logs";
@@ -65,7 +66,12 @@ body {
 }
 @media (min-width: 1280px) {
   .dash-grid {
+    /* "if computer" sketch: logs sit under the video, alerts span full height */
     grid-template-columns: minmax(0, 1fr) 280px;
+    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "video alerts"
+      "logs alerts";
   }
 }
 .dash-video { grid-area: video; }

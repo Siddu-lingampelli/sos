@@ -85,8 +85,8 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      {/* Sidebar — icon rail on phones, labeled rail on md+ */}
-      <aside className="flex w-12 shrink-0 flex-col items-center bg-[#16130e] py-4 text-[#e8e4d8] md:w-36 md:items-stretch xl:w-40">
+      {/* Sidebar — compact rail on phones (~18% per sketch), labeled rail on md+ */}
+      <aside className="flex w-16 shrink-0 flex-col items-center bg-[#16130e] py-4 text-[#e8e4d8] md:w-36 md:items-stretch xl:w-40">
         <Link to="/" title="SilentSOS home" className="flex items-center gap-2.5 md:px-3.5">
           <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#c81e1e]">
             <span className="font-display text-base font-bold text-white">S</span>
