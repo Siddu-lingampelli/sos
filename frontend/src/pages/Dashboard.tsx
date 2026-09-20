@@ -121,12 +121,12 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        {/* LOGS */}
-        <Card className="dash-logs min-h-0">
+        {/* LOGS — bottom of the right column, scrolls */}
+        <Card className="dash-logs flex min-h-[140px] flex-col xl:min-h-0 xl:overflow-hidden">
           <CardTitle right={<span className="font-mono text-[11px] text-[#a8a08a]">TAIL · {live ? "LIVE" : "DEMO"}</span>}>
             Logs
           </CardTitle>
-          <ol className="flex max-h-40 flex-col divide-y divide-[#efece2] overflow-y-auto font-mono text-xs xl:max-h-full">
+          <ol className="flex min-h-0 flex-1 flex-col divide-y divide-[#efece2] overflow-y-auto font-mono text-xs">
             {items.slice(0, 8).map((i) => (
               <li key={i.id} className="flex items-baseline gap-3 py-1.5">
                 <span className="hidden shrink-0 tabular-nums text-[#a8a08a] min-[400px]:inline">{i.time}</span>

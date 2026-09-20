@@ -49,7 +49,9 @@ body {
 .dash-grid {
   display: grid;
   gap: 0.75rem;
-  /* MOBILE: sidebar lives outside this grid; here video | right(alerts+logs) */
+  /* sidebar lives outside this grid.
+     video owns the full middle column; right column stacks alerts over logs.
+     one arrangement at every size — only the rail width adapts. */
   grid-template-columns: minmax(0, 1fr) 200px;
   grid-template-areas:
     "video alerts"
@@ -62,11 +64,7 @@ body {
 }
 @media (min-width: 1280px) {
   .dash-grid {
-    /* sketch: video ~64% wide, alerts rail ~18% */
     grid-template-columns: minmax(0, 1fr) 280px;
-    grid-template-areas:
-      "video alerts"
-      "logs alerts";
   }
 }
 .dash-video { grid-area: video; }
