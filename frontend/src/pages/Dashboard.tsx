@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import CameraFeed from "../components/CameraFeed";
 import { Card, CardTitle, ConfidenceBar, StatusBadge } from "../components/ui";
 import type { Incident } from "../lib/api";
-import { API_URL, DataAPI, MOCK_INCIDENTS } from "../lib/api";
+import { API_URL, DataAPI } from "../lib/api";
 import { useCamera } from "../lib/camera";
 import { useLiveAlerts } from "../lib/useLiveAlerts";
 import type { LiveActivity, LiveIncident } from "../lib/useLiveAlerts";
@@ -18,9 +18,11 @@ const INPUT =
  */
 export default function Dashboard() {
   const { mode, mobileUrl, setMobileUrl, manualUrl, setManualUrl, activeSource } = useCamera();
-  const [items, setItems] = useState<Incident[]>(MOCK_INCIDENTS);
+  // Real backend rows only — never demo data. Empty means empty.
+  const [items, setItems] = useState<Incident[]>([]);
   const [live, setLive] = useState(false);
   const [dbState, setDbState] = useState("unknown");
+  const [backendUp, setBackendUp] = useState(false);
   const [activity, setActivity] = useState<{ time: string; tag: string; text: string }[]>([]);
   const [rotate, setRotate] = useState<number>(() => {
     try {
@@ -44,27 +46,30 @@ export default function Dashboard() {
   useEffect(() => {
     let dead = false;
     DataAPI.incidents()
-      .then(
-        (rows) =>
-          !dead &&
-          setItems(
-            rows.map((a) => ({
-              id: a.id,
-              camera: `Cam #${a.camera_id}`,
-              location: "—",
-              eventType: a.event_type,
-              confidence: Math.round(a.confidence * 100),
-              time: new Date(a.timestamp).toLocaleString(),
-              status: a.status,
-            })),
-          ),
-      )
+      .then((rows) => {
+        if (dead) return;
+        setBackendUp(true);
+        setItems(
+          rows.map((a) => ({
+            id: a.id,
+            camera: `Cam #${a.camera_id}`,
+            location: "—",
+            eventType: a.event_type,
+            confidence: Math.round(a.confidence * 100),
+            time: new Date(a.timestamp).toLocaleString(),
+            status: a.status,
+          })),
+        );
+      })
       .catch(() => {
-        if (!dead) setItems(MOCK_INCIDENTS);
+        // backend down: stay empty, say so honestly below
       });
     DataAPI.health()
       .then((h) => {
-        if (!dead) setDbState(h.db);
+        if (!dead) {
+          setBackendUp(true);
+          setDbState(h.db);
+        }
       })
       .catch(() => {
         if (!dead) setDbState("down");
@@ -173,6 +178,17 @@ export default function Dashboard() {
             Logs
           </CardTitle>
           <ol className="dash-logs-list flex min-h-0 flex-1 flex-col divide-y divide-[#efece2] overflow-y-auto font-mono text-xs">
+            {!backendUp && (
+              <li className="flex items-baseline gap-3 py-1.5">
+                <span className="shrink-0 tabular-nums text-[#a8a08a]">--:--:--</span>
+                <span className="shrink-0 rounded bg-[#c81e1e] px-1.5 py-0.5 text-[10px] font-bold tracking-widest text-white">
+                  SYS
+                </span>
+                <span className="truncate text-[#33302a]">
+                  Backend unreachable at {API_URL} — start it to get live logs
+                </span>
+              </li>
+            )}
             {activity.map((a, idx) => (
               <li key={`live-${idx}`} className="flex items-baseline gap-3 bg-emerald-50/50 py-1.5">
                 <span className="shrink-0 tabular-nums text-[#a8a08a]">{a.time}</span>
@@ -182,17 +198,6 @@ export default function Dashboard() {
                 <span className="truncate text-[#33302a]">{a.text}</span>
               </li>
             ))}
-            {items.length === 0 && activity.length === 0 && (
-              <li className="flex items-baseline gap-3 py-1.5">
-                <span className="shrink-0 tabular-nums text-[#a8a08a]">--:--:--</span>
-                <span className="shrink-0 rounded bg-[#e9e5d8] px-1.5 py-0.5 text-[10px] font-bold tracking-widest text-[#57534a]">
-                  SYS
-                </span>
-                <span className="truncate text-[#33302a]">
-                  No incidents yet — run the feed and trigger a fall to see engine output here
-                </span>
-              </li>
-            )}
             {items.slice(0, 6).map((i) => (
               <li key={i.id} className="flex items-baseline gap-3 py-1.5">
                 <span className="hidden shrink-0 tabular-nums text-[#a8a08a] min-[400px]:inline">{i.time}</span>
@@ -208,22 +213,17 @@ export default function Dashboard() {
                 </span>
               </li>
             ))}
-            <li className="flex items-baseline gap-3 py-1.5">
-              <span className="shrink-0 tabular-nums text-[#a8a08a]">--:--:--</span>
-              <span className="shrink-0 rounded bg-[#e9e5d8] px-1.5 py-0.5 text-[10px] font-bold tracking-widest text-[#57534a]">
-                SYS
-              </span>
-              <span className="truncate text-[#33302a]">
-                Engine armed · fall + stillness + distress · backend db: {dbState}
-              </span>
-            </li>
-            <li className="flex items-baseline gap-3 py-1.5">
-              <span className="shrink-0 tabular-nums text-[#a8a08a]">--:--:--</span>
-              <span className="shrink-0 rounded bg-[#e9e5d8] px-1.5 py-0.5 text-[10px] font-bold tracking-widest text-[#57534a]">
-                AUDIO
-              </span>
-              <span className="truncate text-[#33302a]">VAD idle · keywords: help, emergency, please help</span>
-            </li>
+            {backendUp && (
+              <li className="flex items-baseline gap-3 py-1.5">
+                <span className="shrink-0 tabular-nums text-[#a8a08a]">--:--:--</span>
+                <span className="shrink-0 rounded bg-[#e9e5d8] px-1.5 py-0.5 text-[10px] font-bold tracking-widest text-[#57534a]">
+                  SYS
+                </span>
+                <span className="truncate text-[#33302a]">
+                  Engine armed · fall + stillness + distress · backend db: {dbState}
+                </span>
+              </li>
+            )}
           </ol>
         </Card>
 
