@@ -41,26 +41,40 @@ const VIEW_MODES: { id: CamMode; label: string }[] = [
 function ViewSwitch() {
   const { mode, setMode } = useCamera();
   return (
-    <div
-      role="tablist"
-      aria-label="Camera view"
-      className="hidden items-center gap-0.5 rounded-lg bg-[#e9e5d8] p-0.5 md:flex"
-    >
-      <span className="px-2 font-mono text-[10px] font-bold tracking-widest text-[#a8a08a]">VIEW</span>
-      {VIEW_MODES.map((v) => (
-        <button
-          key={v.id}
-          role="tab"
-          aria-selected={mode === v.id}
-          onClick={() => setMode(v.id)}
-          className={`rounded-md px-2.5 py-1 font-mono text-[11px] font-bold tracking-wide transition-colors ${
-            mode === v.id ? "bg-[#16130e] text-white" : "text-[#57534a] hover:bg-[#dcd6c4]"
-          }`}
-        >
-          {v.label}
-        </button>
-      ))}
-    </div>
+    <>
+      <div
+        role="tablist"
+        aria-label="Camera view"
+        className="hidden items-center gap-0.5 rounded-lg bg-[#e9e5d8] p-0.5 md:flex"
+      >
+        <span className="px-2 font-mono text-[10px] font-bold tracking-widest text-[#a8a08a]">VIEW</span>
+        {VIEW_MODES.map((v) => (
+          <button
+            key={v.id}
+            role="tab"
+            aria-selected={mode === v.id}
+            onClick={() => setMode(v.id)}
+            className={`rounded-md px-2.5 py-1 font-mono text-[11px] font-bold tracking-wide transition-colors ${
+              mode === v.id ? "bg-[#16130e] text-white" : "text-[#57534a] hover:bg-[#dcd6c4]"
+            }`}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
+      <select
+        aria-label="Camera view"
+        value={mode}
+        onChange={(e) => setMode(e.target.value as CamMode)}
+        className="rounded-md border border-[#d8d2c2] bg-[#faf9f5] px-1.5 py-1 font-mono text-[11px] font-bold text-[#16130e] focus:outline-none md:hidden"
+      >
+        {VIEW_MODES.map((v) => (
+          <option key={v.id} value={v.id}>
+            {v.label}
+          </option>
+        ))}
+      </select>
+    </>
   );
 }
 
@@ -71,14 +85,14 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden">
-      {/* Sidebar — narrow labeled rail, ~12% of viewport per sketch */}
-      <aside className="flex w-36 shrink-0 flex-col bg-[#16130e] text-[#e8e4d8] xl:w-40">
-        <Link to="/" className="flex items-center gap-2.5 px-3.5 pb-6 pt-5">
+      {/* Sidebar — icon rail on phones, labeled rail on md+ */}
+      <aside className="flex w-12 shrink-0 flex-col items-center bg-[#16130e] py-4 text-[#e8e4d8] md:w-36 md:items-stretch xl:w-40">
+        <Link to="/" title="SilentSOS home" className="flex items-center gap-2.5 md:px-3.5">
           <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#c81e1e]">
             <span className="font-display text-base font-bold text-white">S</span>
             <span className="rec-dot absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-[#16130e] bg-[#c81e1e]" />
           </span>
-          <span className="min-w-0">
+          <span className="hidden min-w-0 md:block">
             <span className="block truncate font-display text-[15px] font-bold leading-tight tracking-tight text-white">
               SilentSOS
             </span>
@@ -88,14 +102,15 @@ export default function Layout() {
           </span>
         </Link>
 
-        <nav className="flex flex-col gap-0.5 px-2.5">
+        <nav className="mt-6 flex flex-col gap-0.5 md:mt-7 md:px-2.5">
           {NAV.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === "/"}
+              title={item.label}
               className={({ isActive }) =>
-                `flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[12.5px] font-medium transition-colors ${
+                `flex h-10 w-10 items-center justify-center rounded-lg transition-colors md:h-auto md:w-auto md:gap-2.5 md:px-2.5 md:py-2 md:text-[12.5px] md:font-medium ${
                   isActive
                     ? "bg-[#26211a] text-white shadow-[inset_2px_0_0_#c81e1e]"
                     : "text-[#a8a08a] hover:bg-[#1e1a14] hover:text-white"
@@ -103,13 +118,17 @@ export default function Layout() {
               }
             >
               <span className="shrink-0 opacity-80">{item.icon}</span>
-              <span className="truncate">{item.label}</span>
+              <span className="hidden truncate md:inline">{item.label}</span>
             </NavLink>
           ))}
         </nav>
 
-        <div className="mt-auto p-3">
-          <div className="rounded-lg border border-[#353022] bg-[#1e1a14] p-3">
+        <div className="mt-auto flex flex-col items-center gap-2.5 md:items-stretch md:p-3">
+          <span
+            title="Armed — local monitoring"
+            className="rec-dot h-2 w-2 rounded-full bg-emerald-400 md:hidden"
+          />
+          <div className="hidden rounded-lg border border-[#353022] bg-[#1e1a14] p-3 md:block">
             <p className="flex items-center gap-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-400">
               <span className="rec-dot h-1.5 w-1.5 rounded-full bg-emerald-400" />
               Armed
@@ -120,10 +139,11 @@ export default function Layout() {
           </div>
           <Link
             to="/login"
-            className="mt-2.5 flex items-center justify-center gap-2 rounded-lg border border-[#353022] px-3 py-2 text-xs font-semibold text-[#e8e4d8] transition-colors hover:border-[#6b6558] hover:bg-[#1e1a14]"
+            title="Operator sign in"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#353022] text-[#e8e4d8] transition-colors hover:border-[#6b6558] hover:bg-[#1e1a14] md:h-auto md:w-auto md:gap-2 md:px-3 md:py-2 md:text-xs md:font-semibold"
           >
             <IconShield />
-            Sign in
+            <span className="hidden md:inline">Sign in</span>
           </Link>
         </div>
       </aside>
