@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
+import { useCamera } from "../lib/camera";
+import type { CamMode } from "../lib/camera";
 import { IconCamera, IconClock, IconGrid, IconShield, IconSiren } from "./ui";
 
 const NAV = [
@@ -27,6 +29,38 @@ function Clock() {
     <span className="font-mono text-[13px] tabular-nums text-[#57534a]">
       {now.toLocaleTimeString([], { hour12: false })}
     </span>
+  );
+}
+
+const VIEW_MODES: { id: CamMode; label: string }[] = [
+  { id: "laptop", label: "Laptop" },
+  { id: "mobile", label: "Mobile" },
+  { id: "manual", label: "Manual" },
+];
+
+function ViewSwitch() {
+  const { mode, setMode } = useCamera();
+  return (
+    <div
+      role="tablist"
+      aria-label="Camera view"
+      className="hidden items-center gap-0.5 rounded-lg bg-[#e9e5d8] p-0.5 md:flex"
+    >
+      <span className="px-2 font-mono text-[10px] font-bold tracking-widest text-[#a8a08a]">VIEW</span>
+      {VIEW_MODES.map((v) => (
+        <button
+          key={v.id}
+          role="tab"
+          aria-selected={mode === v.id}
+          onClick={() => setMode(v.id)}
+          className={`rounded-md px-2.5 py-1 font-mono text-[11px] font-bold tracking-wide transition-colors ${
+            mode === v.id ? "bg-[#16130e] text-white" : "text-[#57534a] hover:bg-[#dcd6c4]"
+          }`}
+        >
+          {v.label}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -102,6 +136,7 @@ export default function Layout() {
             <h1 className="font-display text-lg font-bold leading-tight tracking-tight">{head.title}</h1>
           </div>
           <div className="flex items-center gap-3">
+            <ViewSwitch />
             <Clock />
             <span className="hidden h-4 w-px bg-[#e2ddd0] sm:block" />
             <span className="inline-flex items-center gap-1.5 rounded-md bg-[#16130e] px-2.5 py-1 font-mono text-[11px] font-semibold text-emerald-400">

@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router";
 import "./index.css";
+import { CameraProvider } from "./lib/camera";
 import Layout from "./components/Layout";
 import Alerts from "./pages/Alerts";
 import Cameras from "./pages/Cameras";
@@ -14,7 +15,13 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route element={<Layout />}>
+        <Route
+          element={
+            <CameraProvider>
+              <Layout />
+            </CameraProvider>
+          }
+        >
           <Route path="/" element={<Dashboard />} />
           <Route path="/alerts" element={<Alerts />} />
           <Route path="/alert/:id" element={<IncidentDetail />} />

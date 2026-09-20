@@ -2,32 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import CameraFeed from "../components/CameraFeed";
 import { Card, CardTitle, ConfidenceBar, StatusBadge } from "../components/ui";
 import type { Incident } from "../lib/api";
-import { API_URL, DEFAULT_CAMERA_SOURCE, DataAPI, MOCK_INCIDENTS } from "../lib/api";
+import { API_URL, DataAPI, MOCK_INCIDENTS } from "../lib/api";
+import { useCamera } from "../lib/camera";
 import { useLiveAlerts } from "../lib/useLiveAlerts";
 import type { LiveIncident } from "../lib/useLiveAlerts";
-
-type CamMode = "laptop" | "mobile" | "manual";
-
-function load(key: string, fallback: string): string {
-  try {
-    return localStorage.getItem(key) ?? fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function save(key: string, value: string): void {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    /* private mode — ignore */
-  }
-}
-
-const PILL = (active: boolean): string =>
-  `rounded-md px-3 py-1.5 font-mono text-[11px] font-bold tracking-widest transition-colors ${
-    active ? "bg-[#16130e] text-white" : "bg-[#e9e5d8] text-[#57534a] hover:bg-[#dcd6c4]"
-  }`;
 
 const INPUT =
   "w-full rounded-md border border-[#d8d2c2] bg-[#faf9f5] px-3 py-2 font-mono text-xs focus:border-[#16130e] focus:outline-none";
@@ -39,18 +17,7 @@ const INPUT =
  * Same three cards, repositioned by grid areas. No duplicates.
  */
 export default function Dashboard() {
-  const [mode, setMode] = useState<CamMode>(() =>
-    DEFAULT_CAMERA_SOURCE === "0" ? "laptop" : "mobile",
-  );
-  const [mobileUrl, setMobileUrl] = useState<string>(() =>
-    load(
-      "sos.cam.mobile",
-      DEFAULT_CAMERA_SOURCE && DEFAULT_CAMERA_SOURCE !== "0"
-        ? DEFAULT_CAMERA_SOURCE
-        : "http://192.168.1.33:8080/video",
-    ),
-  );
-  const [manualUrl, setManualUrl] = useState<string>(() => load("sos.cam.manual", ""));
+  const { mode, mobileUrl, setMobileUrl, manualUrl, setManualUrl, activeSource } = useCamera();
   const [items, setItems] = useState<Incident[]>(MOCK_INCIDENTS);
   const [live, setLive] = useState(false);
 
@@ -97,8 +64,8 @@ export default function Dashboard() {
   }, []);
   useLiveAlerts(onIncident);
 
-  const activeSource = mode === "laptop" ? "0" : mode === "mobile" ? mobileUrl : manualUrl;
   const openItems = items.filter((i) => i.status === "OPEN");
+  const modeLabel = mode === "laptop" ? "Laptop webcam" : mode === "mobile" ? "Mobile camera" : "Manual IP";
 
   return (
     <div className="flex flex-col gap-4 xl:h-full xl:min-h-0">
@@ -119,35 +86,25 @@ export default function Dashboard() {
       <div className="dash-grid xl:min-h-0 xl:flex-1">
         {/* VIDEO */}
         <Card className="dash-video flex min-h-[320px] flex-col xl:min-h-0">
-          <CardTitle right={<span className="font-mono text-[11px] text-[#a8a08a]">CAM 01 · MAIN HALLWAY</span>}>
+          <CardTitle right={<span className="font-mono text-[11px] text-[#a8a08a]">CAM 01 · {modeLabel.toUpperCase()}</span>}>
             Live feed
           </CardTitle>
-          <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2">
-            <button className={PILL(mode === "laptop")} onClick={() => setMode("laptop")}>LAPTOP</button>
-            <button className={PILL(mode === "mobile")} onClick={() => setMode("mobile")}>MOBILE</button>
-            <button className={PILL(mode === "manual")} onClick={() => setMode("manual")}>MANUAL IP</button>
-            {(mode === "mobile" || mode === "manual") && (
-              <input
-                value={mode === "mobile" ? mobileUrl : manualUrl}
-                onChange={(e) => {
-                  if (mode === "mobile") {
-                    setMobileUrl(e.target.value);
-                    save("sos.cam.mobile", e.target.value);
-                  } else {
-                    setManualUrl(e.target.value);
-                    save("sos.cam.manual", e.target.value);
-                  }
-                }}
-                placeholder={
-                  mode === "mobile"
-                    ? "http://192.168.1.33:8080/video"
-                    : "http://192.168.1.50:8080/video  ·  rtsp://user:pass@host/…"
-                }
-                spellCheck={false}
-                className={`${INPUT} min-w-44 flex-1`}
-              />
-            )}
-          </div>
+          {(mode === "mobile" || mode === "manual") && (
+            <input
+              value={mode === "mobile" ? mobileUrl : manualUrl}
+              onChange={(e) => {
+                if (mode === "mobile") setMobileUrl(e.target.value);
+                else setManualUrl(e.target.value);
+              }}
+              placeholder={
+                mode === "mobile"
+                  ? "http://192.168.1.33:8080/video"
+                  : "http://192.168.1.50:8080/video  ·  rtsp://user:pass@host/…"
+              }
+              spellCheck={false}
+              className={`${INPUT} mb-3`}
+            />
+          )}
           <div className="min-h-0 flex-1">
             <CameraFeed source={activeSource} apiNote={API_URL} />
           </div>
