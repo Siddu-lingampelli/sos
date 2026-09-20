@@ -4,12 +4,21 @@ Uses ultralytics built-in ByteTrack (model.track persist=True) so IDs are
 stable across frames — exactly what Level 4 requires:
   YOLO Pose -> Person Detection -> ByteTrack -> Persistent Person ID
 """
+import os
 import time
 from collections import deque, defaultdict
+import cv2
 import numpy as np
+import torch
 from ultralytics import YOLO
 
 from config import FallConfig, DEFAULT
+
+try:
+    torch.set_num_threads(max(1, os.cpu_count() or 4))
+    torch.set_num_interop_threads(1)
+except Exception:
+    pass
 
 
 def _kp_center(kp, idxs, min_conf):
@@ -50,15 +59,21 @@ class PersonTracker:
 
     def process(self, frame: np.ndarray):
         t0 = time.time()
+        h, w = frame.shape[:2]
+        # Pre-shrink huge frames (phone 1080p) — YOLO letterbox cost dominates on CPU
+        scale = 1.0
+        frame_in = frame
+        if max(h, w) > self.cfg.INFER_WIDTH:
+            scale = self.cfg.INFER_WIDTH / max(h, w)
+            frame_in = cv2.resize(frame, (int(w * scale), int(h * scale)))
         results = self.model.track(
-            frame, persist=True, verbose=False,
+            frame_in, persist=True, verbose=False,
             conf=self.cfg.BOX_CONF, tracker="bytetrack.yaml",
             imgsz=self.cfg.IMGSZ,
         )
         latency = time.time() - t0
         persons = []
         now = time.time()
-        h, w = frame.shape[:2]
 
         for r in results:
             boxes = r.boxes
@@ -77,6 +92,11 @@ class PersonTracker:
                         tid = self._untracked_seq
                         self._untracked_seq -= 1
                     kp = kps.data[i].cpu().numpy().tolist() if kps is not None and len(kps.data) > i else []
+                    if scale != 1.0:
+                        # Map coords back to the original full-size frame
+                        inv = 1.0 / scale
+                        box = [c * inv for c in box]
+                        kp = [[p[0] * inv, p[1] * inv] + p[2:] for p in kp]
                 except (IndexError, AttributeError):
                     continue
                 x1, y1, x2, y2 = box

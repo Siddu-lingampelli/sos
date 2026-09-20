@@ -42,12 +42,17 @@ def main():
     last_frame_time = time.time()
     current_fps = 0.0
     alpha = 0.1
+    stride = max(1, DEFAULT.DETECT_STRIDE)
+    last_persons: list = []
+    last_latency = 0.0
+    n = 0
 
     try:
         for ret, frame in stream.read_frames():
             if not ret or frame is None:
                 print("\n[*] End of video stream.")
                 break
+            n += 1
 
             current_time = time.time()
             elapsed = current_time - last_frame_time
@@ -55,10 +60,13 @@ def main():
                 current_fps = (alpha * (1.0 / elapsed)) + ((1 - alpha) * current_fps)
             last_frame_time = current_time
 
-            persons, latency = tracker.process(frame)
-            for p in persons:
-                fall.update(p, tracker.track_history(p.get("track_id", -1)))
-            fall.prune(tracker.history.keys())
+            if n % stride == 1:
+                persons, last_latency = tracker.process(frame)
+                for p in persons:
+                    fall.update(p, tracker.track_history(p.get("track_id", -1)))
+                fall.prune(tracker.history.keys())
+                last_persons = persons
+            persons, latency = last_persons, last_latency
 
             out_frame = visualizer.draw(frame, persons, current_fps, latency)
 
