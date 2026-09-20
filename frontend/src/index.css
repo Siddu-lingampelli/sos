@@ -45,6 +45,33 @@ body {
 .vf-bl { left: 12px; bottom: 12px; border-width: 0 0 2px 2px; }
 .vf-br { right: 12px; bottom: 12px; border-width: 0 2px 2px 0; }
 
+/* ---- dashboard responsive geometry (positions only) ---- */
+.dash-grid {
+  display: grid;
+  gap: 1rem;
+  /* MOBILE: sidebar lives outside this grid; here video | right(alerts+logs) */
+  grid-template-columns: minmax(0, 1fr) 200px;
+  grid-template-areas:
+    "video alerts"
+    "video logs";
+}
+@media (min-width: 640px) {
+  .dash-grid {
+    grid-template-columns: minmax(0, 1fr) 240px;
+  }
+}
+@media (min-width: 1280px) {
+  .dash-grid {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-areas:
+      "video alerts"
+      "logs alerts";
+  }
+}
+.dash-video { grid-area: video; }
+.dash-logs { grid-area: logs; }
+.dash-alerts { grid-area: alerts; }
+
 @keyframes sos-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.25; }

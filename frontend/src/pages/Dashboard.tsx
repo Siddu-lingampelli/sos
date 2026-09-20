@@ -33,8 +33,10 @@ const INPUT =
   "w-full rounded-md border border-[#d8d2c2] bg-[#faf9f5] px-3 py-2 font-mono text-xs focus:border-[#16130e] focus:outline-none";
 
 /**
- * Sketch geometry: center column dominates (video fills, logs beneath),
- * alerts pinned to a fixed 300px right rail. Page is viewport-locked on xl.
+ * Responsive geometry (positions only — see .dash-grid in index.css):
+ *  desktop xl : [ video+logs | alerts ]  (alerts spans both rows)
+ *  mobile     : [ video     | alerts/logs stacked ] (video spans both rows)
+ * Same three cards, repositioned by grid areas. No duplicates.
  */
 export default function Dashboard() {
   const [mode, setMode] = useState<CamMode>(() =>
@@ -114,86 +116,80 @@ export default function Dashboard() {
         <span className="ml-auto hidden sm:inline">{API_URL}</span>
       </div>
 
-      {/* Center (video + logs) | right alerts rail */}
-      <div className="grid grid-cols-1 gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_300px]">
-        {/* CENTER — video fills, logs immediately beneath */}
-        <div className="flex min-h-0 flex-col gap-4">
-          <Card className="flex min-h-0 flex-1 flex-col">
-            <CardTitle right={<span className="font-mono text-[11px] text-[#a8a08a]">CAM 01 · MAIN HALLWAY</span>}>
-              Live feed
-            </CardTitle>
-            <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2">
-              <button className={PILL(mode === "laptop")} onClick={() => setMode("laptop")}>LAPTOP</button>
-              <button className={PILL(mode === "mobile")} onClick={() => setMode("mobile")}>MOBILE</button>
-              <button className={PILL(mode === "manual")} onClick={() => setMode("manual")}>MANUAL IP</button>
-              {mode === "mobile" && (
-                <input
-                  value={mobileUrl}
-                  onChange={(e) => {
+      <div className="dash-grid xl:min-h-0 xl:flex-1">
+        {/* VIDEO */}
+        <Card className="dash-video flex min-h-[320px] flex-col xl:min-h-0">
+          <CardTitle right={<span className="font-mono text-[11px] text-[#a8a08a]">CAM 01 · MAIN HALLWAY</span>}>
+            Live feed
+          </CardTitle>
+          <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2">
+            <button className={PILL(mode === "laptop")} onClick={() => setMode("laptop")}>LAPTOP</button>
+            <button className={PILL(mode === "mobile")} onClick={() => setMode("mobile")}>MOBILE</button>
+            <button className={PILL(mode === "manual")} onClick={() => setMode("manual")}>MANUAL IP</button>
+            {(mode === "mobile" || mode === "manual") && (
+              <input
+                value={mode === "mobile" ? mobileUrl : manualUrl}
+                onChange={(e) => {
+                  if (mode === "mobile") {
                     setMobileUrl(e.target.value);
                     save("sos.cam.mobile", e.target.value);
-                  }}
-                  placeholder="http://192.168.1.33:8080/video"
-                  spellCheck={false}
-                  className={`${INPUT} min-w-52 flex-1`}
-                />
-              )}
-              {mode === "manual" && (
-                <input
-                  value={manualUrl}
-                  onChange={(e) => {
+                  } else {
                     setManualUrl(e.target.value);
                     save("sos.cam.manual", e.target.value);
-                  }}
-                  placeholder="http://192.168.1.50:8080/video  ·  rtsp://user:pass@host/…"
-                  spellCheck={false}
-                  className={`${INPUT} min-w-52 flex-1`}
-                />
-              )}
-            </div>
-            <div className="min-h-0 flex-1">
-              <CameraFeed source={activeSource} apiNote={API_URL} />
-            </div>
-            <div className="mt-3 flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[11px] text-[#57534a]">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-sm bg-[#16a34a]" /> TRACKING
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-sm bg-[#f59e0b]" /> POSSIBLE FALL
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-sm bg-[#c81e1e]" /> EMERGENCY
-              </span>
-            </div>
-          </Card>
+                  }
+                }}
+                placeholder={
+                  mode === "mobile"
+                    ? "http://192.168.1.33:8080/video"
+                    : "http://192.168.1.50:8080/video  ·  rtsp://user:pass@host/…"
+                }
+                spellCheck={false}
+                className={`${INPUT} min-w-44 flex-1`}
+              />
+            )}
+          </div>
+          <div className="min-h-0 flex-1">
+            <CameraFeed source={activeSource} apiNote={API_URL} />
+          </div>
+          <div className="mt-3 hidden shrink-0 flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[11px] text-[#57534a] sm:flex">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-sm bg-[#16a34a]" /> TRACKING
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-sm bg-[#f59e0b]" /> POSSIBLE FALL
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-sm bg-[#c81e1e]" /> EMERGENCY
+            </span>
+          </div>
+        </Card>
 
-          {/* LOGS — directly under the camera, center column only */}
-          <Card className="shrink-0">
-            <CardTitle right={<span className="font-mono text-[11px] text-[#a8a08a]">TAIL · {live ? "LIVE" : "DEMO"}</span>}>
-              Logs
-            </CardTitle>
-            <ol className="flex max-h-36 flex-col divide-y divide-[#efece2] overflow-y-auto font-mono text-xs">
-              {items.slice(0, 6).map((i) => (
-                <li key={i.id} className="flex items-baseline gap-3 py-1.5">
-                  <span className="shrink-0 tabular-nums text-[#a8a08a]">{i.time}</span>
-                  <span
-                    className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold tracking-widest ${
-                      i.status === "OPEN" ? "bg-[#c81e1e] text-white" : "bg-[#e9e5d8] text-[#57534a]"
-                    }`}
-                  >
-                    {i.status === "OPEN" ? "ALERT" : i.status}
-                  </span>
-                  <span className="truncate text-[#33302a]">
-                    {i.eventType} — {i.location} · score {i.confidence}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </Card>
-        </div>
+        {/* LOGS */}
+        <Card className="dash-logs min-h-0">
+          <CardTitle right={<span className="font-mono text-[11px] text-[#a8a08a]">TAIL · {live ? "LIVE" : "DEMO"}</span>}>
+            Logs
+          </CardTitle>
+          <ol className="flex max-h-40 flex-col divide-y divide-[#efece2] overflow-y-auto font-mono text-xs xl:max-h-full">
+            {items.slice(0, 8).map((i) => (
+              <li key={i.id} className="flex items-baseline gap-3 py-1.5">
+                <span className="hidden shrink-0 tabular-nums text-[#a8a08a] min-[400px]:inline">{i.time}</span>
+                <span
+                  className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold tracking-widest ${
+                    i.status === "OPEN" ? "bg-[#c81e1e] text-white" : "bg-[#e9e5d8] text-[#57534a]"
+                  }`}
+                >
+                  {i.status === "OPEN" ? "ALERT" : i.status}
+                </span>
+                <span className="truncate text-[#33302a]">
+                  {i.eventType} · score {i.confidence}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </Card>
 
-        {/* RIGHT — fixed 300px alerts rail */}
-        <Card className="flex min-h-0 flex-col xl:overflow-hidden">
+        {/* ALERTS */}
+        <Card className="dash-alerts flex min-h-0 flex-col">
           <CardTitle
             right={
               <a href="/alerts" className="font-mono text-[11px] font-semibold text-[#c81e1e] hover:underline">
@@ -204,23 +200,20 @@ export default function Dashboard() {
             Alerts
           </CardTitle>
           {openItems.length === 0 ? (
-            <div className="flex flex-1 flex-col items-center justify-center gap-1 py-10 text-center">
-              <p className="font-display font-bold">Queue clear</p>
-              <p className="max-w-[180px] text-xs text-[#57534a]">Firings from the engine land here live.</p>
+            <div className="flex flex-1 flex-col items-center justify-center gap-1 py-8 text-center">
+              <p className="font-display text-sm font-bold">Queue clear</p>
+              <p className="max-w-[160px] text-[11px] text-[#57534a]">Engine firings land here live.</p>
             </div>
           ) : (
-            <ul className="flex flex-1 flex-col gap-3 overflow-y-auto pr-0.5">
+            <ul className="flex flex-1 flex-col gap-2.5 overflow-y-auto pr-0.5">
               {openItems.slice(0, 8).map((i) => (
-                <li key={i.id} className="rounded-lg border border-[#e2ddd0] bg-[#faf9f5] p-3">
+                <li key={i.id} className="rounded-lg border border-[#e2ddd0] bg-[#faf9f5] p-2.5">
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-mono text-[11px] font-bold text-[#c81e1e]">#{i.id}</span>
                     <StatusBadge status={i.status} />
                   </div>
-                  <p className="mt-1 text-[13px] font-bold leading-snug">{i.eventType}</p>
-                  <p className="mt-0.5 font-mono text-[11px] text-[#a8a08a]">
-                    {i.time} · {i.location}
-                  </p>
-                  <div className="mt-2">
+                  <p className="mt-1 text-xs font-bold leading-snug">{i.eventType}</p>
+                  <div className="mt-1.5">
                     <ConfidenceBar value={i.confidence} />
                   </div>
                 </li>
