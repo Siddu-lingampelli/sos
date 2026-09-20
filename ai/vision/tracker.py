@@ -108,6 +108,7 @@ class PersonTracker:
                     "track_id": tid, "cx": (x1 + x2) / 2 / w, "cy": (y1 + y2) / 2 / h,
                     "hip_y": (hip[1] / h) if hip else None,
                     "angle": ang, "aspect": bw / bh, "t": now,
+                    "fw": w, "fh": h,  # frame dims: inactivity normalizes pixel deltas
                 }
                 self.history[tid].append(entry)
                 self.last_seen[tid] = now

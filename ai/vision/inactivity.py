@@ -37,15 +37,17 @@ def movement_score(hist, window_sec=3.0):
     c1 = np.array([win[-1].get("cx", 0), win[-1].get("cy", 0)])
     centroid = float(np.linalg.norm(c1 - c0)) / dt
 
-    # Mean keypoint displacement (first vs last frame in window)
+    # Mean keypoint displacement (first vs last frame in window),
+    # normalized by frame height so pixel jitter doesn't dwarf the metric
     kp0 = win[0].get("keypoints", [])
     kp1 = win[-1].get("keypoints", [])
+    fh = win[-1].get("fh", 640) or 640
     disp = []
     for a, b in zip(kp0, kp1):
         ca = a[2] if len(a) > 2 else 1.0
         cb = b[2] if len(b) > 2 else 1.0
         if ca >= 0.4 and cb >= 0.4:
-            disp.append(abs(a[0] - b[0]) + abs(a[1] - b[1]))
+            disp.append((abs(a[0] - b[0]) + abs(a[1] - b[1])) / fh)
     keypoints = (sum(disp) / len(disp) / dt) if disp else 0.0
 
     return round(0.5 * centroid + 0.5 * keypoints, 4)
