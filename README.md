@@ -6,12 +6,13 @@ SilentSOS passively monitors a hostel/campus environment for possible falls, pro
 
 See `SOS_Documentation.md` (spec) and `SOS_PLAN.md` (10-level build plan).
 
-## Level 1 — Foundation (current)
+## Status — Levels 1–5 complete
 
-- `backend/` — FastAPI + health check (`/`, `/health`, `/api/health`)
-- `frontend/` — React + TypeScript + Tailwind + React Router shell (Login, Dashboard, placeholder Incident/History)
-- `ai/vision,audio,engine/` — dependency manifests + placeholder modules
-- `database/` — Postgres dev init (`init.sql`)
+- `backend/` — FastAPI + JWT auth + cameras/locations/incidents APIs + live MJPEG `/api/stream/video`
+- `frontend/` — React + TypeScript + Tailwind dashboard with laptop / mobile / manual-IP camera picker
+- `ai/vision/` — OpenCV + YOLO11n-pose + ByteTrack IDs + fall state machine + inactivity observation window
+- `ai/audio, ai/engine/` — placeholders for Level 6 (audio) and Level 7 (confidence engine)
+- `database/` — Postgres dev init (`init.sql`); full schema via SQLAlchemy models + Alembic env
 - `docker-compose.yml` — postgres + backend + frontend
 - `.env.example` — DATABASE_URL, JWT_SECRET, BACKEND_URL, FRONTEND_URL, MODEL_PATHS, ALERT_SETTINGS
 
@@ -22,8 +23,9 @@ Backend:
 python -m venv backend\venv
 backend\venv\Scripts\Activate.ps1
 pip install -r backend\requirements.txt
-uvicorn backend.main:app --reload --port 8000
-# → http://localhost:8000/health
+cd backend
+uvicorn main:app --reload --port 8000
+# → http://localhost:8000/health (run from inside backend/ — main.py uses app.* imports)
 ```
 
 Frontend:

@@ -1,5 +1,5 @@
 Write-Host "=========================================" -ForegroundColor Cyan
-Write-Host "   Starting SilentSOS (Levels 1-3)       " -ForegroundColor Cyan
+Write-Host "   Starting SilentSOS (Levels 1-5)       " -ForegroundColor Cyan
 Write-Host "=========================================" -ForegroundColor Cyan
 
 Write-Host "`n[1] Starting FastAPI Backend & AI Vision Engine..." -ForegroundColor Yellow

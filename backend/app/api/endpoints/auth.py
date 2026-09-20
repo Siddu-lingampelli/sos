@@ -34,6 +34,9 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    access_token = create_access_token(data={"sub": user.email, "role": user.role.value})
+    if not user.is_active:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account disabled")
+
+    role = getattr(user.role, "value", user.role) or RoleEnum.SECURITY_OFFICER.value
+    access_token = create_access_token(data={"sub": user.email, "role": role})
     return {"access_token": access_token, "token_type": "bearer"}
