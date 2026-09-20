@@ -58,6 +58,7 @@ def main():
             persons, latency = tracker.process(frame)
             for p in persons:
                 fall.update(p, tracker.track_history(p.get("track_id", -1)))
+            fall.prune(tracker.history.keys())
 
             out_frame = visualizer.draw(frame, persons, current_fps, latency)
 
@@ -77,7 +78,7 @@ def main():
             writer.release()
         cv2.destroyAllWindows()
         print(f"[*] Fall events this run: {len(fall.events)}")
-        for e in fall.events[-10:]:
+        for e in list(fall.events)[-10:]:
             print("   ", e)
         print("[*] Pipeline shutdown complete.")
 

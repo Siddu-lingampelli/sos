@@ -12,8 +12,6 @@ import threading
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from ...core.config import settings
-
 ai_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../ai"))
 if ai_path not in sys.path:
     sys.path.append(ai_path)
@@ -58,6 +56,7 @@ def _inference_loop(source_key: str, vid_source):
             persons, latency = tracker.process(frame)
             for p in persons:
                 fall.update(p, tracker.track_history(p.get("track_id", -1)))
+            fall.prune(tracker.history.keys())
             out = viz.draw(frame, persons, fps, latency)
             ok, buf = cv2.imencode('.jpg', out)
             if ok:
@@ -85,12 +84,22 @@ def generate_frames(source: str):
     if not AI_AVAILABLE:
         return
     _ensure_source(source)
+    served = False
+    idle = 0
     while True:
         with _lock:
             st = _states.get(source)
             jpg = st["jpg"] if st else None
         if jpg is not None:
+            served = True
+            idle = 0
             yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + jpg + b'\r\n')
+        else:
+            idle += 1
+        if st is None and (served or idle > 15 * 10):
+            # Camera thread died (disconnect) — close connection so the
+            # browser <img onError> fires instead of hanging on last frame
+            break
         time.sleep(1 / 15)
 
 

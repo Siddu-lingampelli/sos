@@ -3,10 +3,8 @@
 Run: uvicorn main:app --reload --port 8000
 Health: GET /health, GET /api/health
 """
-import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 
 from app.core.config import settings
@@ -42,11 +40,11 @@ def health():
 
 @app.get("/api/health")
 def api_health():
-    # Verify DB
+    # Verify DB — reuse the shared engine (no per-request pool leak)
     db_status = "untested"
     try:
-        engine_test = create_engine(settings.DATABASE_URL)
-        with engine_test.connect() as conn:
+        with engine.connect() as conn:
+            conn.exec_driver_sql("SELECT 1")
             db_status = "connected"
     except OperationalError:
         db_status = "disconnected"

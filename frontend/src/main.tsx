@@ -1,4 +1,4 @@
-import { StrictMode, useState } from 'react'
+import { StrictMode, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router'
 import './index.css'
@@ -11,12 +11,10 @@ const Login = () => <div className="p-8"><h1 className="text-2xl font-bold text-
 
 const CameraFeed = ({ source }: { source: string }) => {
   const [offline, setOffline] = useState(false);
-  // Reset offline flag whenever the source changes
-  const [lastSource, setLastSource] = useState(source);
-  if (lastSource !== source) {
-    setLastSource(source);
+  // Reset offline flag whenever the source changes (effect, not render-time setState)
+  useEffect(() => {
     setOffline(false);
-  }
+  }, [source]);
   if (!source) {
     return <span className="text-slate-500">Select a camera above to start the feed</span>;
   }

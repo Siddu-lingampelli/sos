@@ -3,8 +3,12 @@
 States: NORMAL -> POSSIBLE_FALL -> FALL_CONFIRMED -> RECOVERED -> NORMAL
 Uses torso angle, bbox aspect, and hip vertical velocity over history window.
 """
-from collections import defaultdict
+from collections import defaultdict, deque
 from config import FallConfig, DEFAULT
+
+# Consecutive upright frames required before leaving POSSIBLE_FALL
+# (prevents a single flicker frame from flipping to RECOVERED)
+UPRIGHT_EXIT_FRAMES = 2
 
 
 class FallDetector:
@@ -12,7 +16,8 @@ class FallDetector:
         self.cfg = cfg
         self.state: dict[int, str] = defaultdict(lambda: "NORMAL")
         self.counters: dict[int, int] = defaultdict(int)
-        self.events: list[dict] = []  # structured fall events for Level 5/engine
+        self.upright_streak: dict[int, int] = defaultdict(int)
+        self.events: deque[dict] = deque(maxlen=500)  # bounded: no leak on 24/7 runs
 
     def _hip_velocity(self, hist):
         """Normalized hip-y drop per second over recent history."""
@@ -48,12 +53,17 @@ class FallDetector:
         elif st == "POSSIBLE_FALL":
             if horizontal:
                 self.counters[tid] += 1
+                self.upright_streak[tid] = 0
                 if self.counters[tid] >= self.cfg.CONFIRM_FRAMES:
                     self._set(tid, "FALL_CONFIRMED", person, reason="confirmed-temporal")
             else:
-                # brief horizontal then upright => false alarm / bending
-                self.counters[tid] = 0
-                self._set(tid, "RECOVERED", person, reason="stood-back-up")
+                # Require consecutive upright frames — a single flicker
+                # frame (brief bend / missed keypoints) must not flip state
+                self.upright_streak[tid] += 1
+                if self.upright_streak[tid] >= UPRIGHT_EXIT_FRAMES:
+                    self.counters[tid] = 0
+                    self.upright_streak[tid] = 0
+                    self._set(tid, "RECOVERED", person, reason="stood-back-up")
         elif st == "FALL_CONFIRMED":
             if not horizontal:
                 self.counters[tid] += 1
@@ -86,3 +96,10 @@ class FallDetector:
     def reset_track(self, tid: int):
         self.state.pop(tid, None)
         self.counters.pop(tid, None)
+        self.upright_streak.pop(tid, None)
+
+    def prune(self, active_tids) -> None:
+        """Drop state for tracks the tracker no longer holds (prevents leak)."""
+        active = set(active_tids)
+        for tid in [t for t in self.state if t not in active]:
+            self.reset_track(tid)

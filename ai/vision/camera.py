@@ -36,6 +36,13 @@ class CameraStream:
         else:
             self.is_live = False
 
+        if self.is_live:
+            # Drop stale buffered frames so live inference never lags behind realtime
+            try:
+                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            except Exception:
+                pass
+
     def read_frames(self) -> Generator[Tuple[bool, Optional[np.ndarray]], None, None]:
         """
         Yield frames from the camera/video.
