@@ -30,6 +30,16 @@ class FallConfig:
     STREAM_WIDTH: int = 512
     # JPEG quality for MJPEG stream (lower = less bandwidth/CPU)
     JPEG_QUALITY: int = 60
+    # --- Level 5: post-fall observation + inactivity ---
+    # Seconds to watch a fallen person before judging inactivity
+    OBSERVATION_DURATION_SEC: float = 10.0
+    # Movement score per second below which the person counts as motionless
+    # (normalized frame units; tune with test videos)
+    INACTIVITY_THRESHOLD: float = 0.02
+    # Movement above threshold * this factor cancels observation (recovery)
+    RECOVERY_FACTOR: float = 3.0
+    # Seconds of history used for the movement score
+    MOVEMENT_WINDOW_SEC: float = 3.0
 
 
 DEFAULT = FallConfig()

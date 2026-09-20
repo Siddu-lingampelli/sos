@@ -23,6 +23,7 @@ try:
     from camera import CameraStream
     from tracker import PersonTracker
     from fall_detector import FallDetector
+    from inactivity import InactivityMonitor
     from visualizer import Visualizer
     from config import DEFAULT
     AI_AVAILABLE = True
@@ -41,6 +42,7 @@ def _inference_loop(source_key: str, vid_source):
     stream = CameraStream(source=vid_source, max_fps=15)
     tracker = PersonTracker(model_path=os.path.join(vision_path, "yolo11n-pose.pt"), cfg=DEFAULT)
     fall = FallDetector(cfg=DEFAULT)
+    inact = InactivityMonitor(cfg=DEFAULT)
     viz = Visualizer()
     last = time.time()
     fps = 0.0
@@ -62,8 +64,13 @@ def _inference_loop(source_key: str, vid_source):
                 # Heavy YOLO inference only on stride frames
                 persons, last_latency = tracker.process(frame)
                 for p in persons:
-                    fall.update(p, tracker.track_history(p.get("track_id", -1)))
+                    tid = p.get("track_id", -1)
+                    hist = tracker.track_history(tid)
+                    fall.update(p, hist)
+                    inact.update(tid, hist, p.get("fall_state", "NORMAL"))
+                    p.update(inact.info(tid, hist))
                 fall.prune(tracker.history.keys())
+                inact.prune(tracker.history.keys())
                 last_persons = persons
             out = viz.draw(frame, last_persons, fps, last_latency)
             h, w = out.shape[:2]

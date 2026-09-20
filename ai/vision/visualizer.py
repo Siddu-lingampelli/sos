@@ -38,6 +38,15 @@ class Visualizer:
             ang_txt = f"{ang:.0f}d" if ang is not None else "?"
             cv2.putText(out_frame, f"ID{tid} {state} {ang_txt}", (x1, max(0, y1 - 8)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 2)
+            # Level 5: observation / inactivity badge
+            ist = person.get("inact_state", "IDLE")
+            if ist == "OBSERVING":
+                el = person.get("inact_elapsed", 0.0)
+                cv2.putText(out_frame, f"OBSERVING {el:.0f}s", (x1, y2 + 18),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 165, 255), 2)
+            elif ist == "INACTIVE":
+                cv2.putText(out_frame, "INACTIVE - POSSIBLE EMERGENCY", (x1, y2 + 18),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 255), 2)
             
             # Keypoints & Skeleton
             keypoints = person.get("keypoints", [])

@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from camera import CameraStream
 from tracker import PersonTracker
 from fall_detector import FallDetector
+from inactivity import InactivityMonitor
 from visualizer import Visualizer
 from config import DEFAULT
 
@@ -27,6 +28,7 @@ def main():
     stream = CameraStream(source=source, max_fps=args.fps)
     tracker = PersonTracker(model_path="yolo11n-pose.pt", cfg=DEFAULT)
     fall = FallDetector(cfg=DEFAULT)
+    inact = InactivityMonitor(cfg=DEFAULT)
     visualizer = Visualizer()
 
     writer = None
@@ -63,8 +65,13 @@ def main():
             if n % stride == 1:
                 persons, last_latency = tracker.process(frame)
                 for p in persons:
-                    fall.update(p, tracker.track_history(p.get("track_id", -1)))
+                    tid = p.get("track_id", -1)
+                    hist = tracker.track_history(tid)
+                    fall.update(p, hist)
+                    inact.update(tid, hist, p.get("fall_state", "NORMAL"))
+                    p.update(inact.info(tid, hist))
                 fall.prune(tracker.history.keys())
+                inact.prune(tracker.history.keys())
                 last_persons = persons
             persons, latency = last_persons, last_latency
 
@@ -87,6 +94,9 @@ def main():
         cv2.destroyAllWindows()
         print(f"[*] Fall events this run: {len(fall.events)}")
         for e in list(fall.events)[-10:]:
+            print("   ", e)
+        print(f"[*] Inactivity events this run: {len(inact.events)}")
+        for e in list(inact.events)[-10:]:
             print("   ", e)
         print("[*] Pipeline shutdown complete.")
 
