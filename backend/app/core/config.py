@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "postgresql://silentsos:silentsos@localhost:5432/silentsos"
+    DATABASE_URL: str = "sqlite:///./silentsos.db"
     JWT_SECRET: str = "change-me-in-.env"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 720
