@@ -49,34 +49,51 @@ body {
 .dash-grid {
   display: grid;
   gap: 0.5rem;
-  /* 1000x1300 reference: video ~40% / right rail ~60% of this grid,
-     video full-height middle, alerts (~40%) over logs (~60%) on the right. */
-  min-height: max(480px, calc(100dvh - 150px));
-  grid-template-columns: 2fr 3fr;
-  grid-template-rows: minmax(0, 2fr) minmax(0, 3fr);
-  grid-template-areas:
-    "video alerts"
-    "video logs";
 }
 @media (min-width: 640px) {
   .dash-grid {
     gap: 0.75rem;
   }
 }
+
+/* ---- LAPTOP view: wide video + logs beneath, full-height alerts rail ---- */
+.dash-desktop {
+  grid-template-columns: minmax(0, 1fr) 200px;
+  grid-template-areas:
+    "video alerts"
+    "logs alerts";
+}
 @media (min-width: 1280px) {
-  .dash-grid {
-    /* "if computer" sketch: logs sit under the video, alerts span full height */
-    min-height: 0;
+  .dash-desktop {
     grid-template-columns: minmax(0, 1fr) 280px;
     grid-template-rows: minmax(0, 1fr) auto;
-    grid-template-areas:
-      "video alerts"
-      "logs alerts";
+  }
+}
+
+/* ---- MOBILE/IP-WEBCAM view (1000x1300 ref): tall narrow video spanning
+        both rows; right column stacks alerts (~40%) over logs (~60%).
+        Applies whenever the mobile view is selected, on any screen. ---- */
+.dash-mobile {
+  min-height: max(480px, calc(100dvh - 150px));
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  grid-template-rows: minmax(0, 2fr) minmax(0, 3fr);
+  grid-template-areas:
+    "video alerts"
+    "video logs";
+}
+@media (min-width: 1280px) {
+  .dash-mobile {
+    min-height: 0;
   }
 }
 .dash-video { grid-area: video; }
 .dash-logs { grid-area: logs; }
 .dash-alerts { grid-area: alerts; }
+
+/* desktop rows are content-sized: cap the log tail so it can't push the video */
+.dash-desktop .dash-logs-list {
+  max-height: 11rem;
+}
 
 @keyframes sos-blink {
   0%, 100% { opacity: 1; }

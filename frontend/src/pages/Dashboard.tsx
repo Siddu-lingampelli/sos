@@ -83,7 +83,7 @@ export default function Dashboard() {
         <span className="ml-auto hidden sm:inline">{API_URL}</span>
       </div>
 
-      <div className="dash-grid xl:min-h-0 xl:flex-1">
+      <div className={`dash-grid xl:min-h-0 xl:flex-1 ${mode === "laptop" ? "dash-desktop" : "dash-mobile"}`}>
         {/* VIDEO */}
         <Card className="dash-video flex min-h-[320px] flex-col xl:min-h-0">
           <CardTitle right={<span className="font-mono text-[11px] text-[#a8a08a]">CAM 01 · {modeLabel.toUpperCase()}</span>}>
@@ -126,7 +126,7 @@ export default function Dashboard() {
           <CardTitle right={<span className="font-mono text-[11px] text-[#a8a08a]">TAIL · {live ? "LIVE" : "DEMO"}</span>}>
             Logs
           </CardTitle>
-          <ol className="flex min-h-0 flex-1 flex-col divide-y divide-[#efece2] overflow-y-auto font-mono text-xs">
+          <ol className="dash-logs-list flex min-h-0 flex-1 flex-col divide-y divide-[#efece2] overflow-y-auto font-mono text-xs">
             {items.slice(0, 8).map((i) => (
               <li key={i.id} className="flex items-baseline gap-3 py-1.5">
                 <span className="hidden shrink-0 tabular-nums text-[#a8a08a] min-[400px]:inline">{i.time}</span>
