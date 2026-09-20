@@ -10,7 +10,7 @@ export default function Login() {
   const submit = (e: React.FormEvent): void => {
     e.preventDefault();
     if (!email.includes("@") || password.length < 4) {
-      setError("Enter a valid email and a password of 4+ characters.");
+      setError("That email or password doesn't look right — 4+ characters, valid email.");
       return;
     }
     // Level 8 will POST /api/auth/login and store the JWT. For now, enter the shell.
@@ -19,19 +19,35 @@ export default function Login() {
   };
 
   const field =
-    "w-full rounded-lg border border-slate-300 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-600";
+    "w-full rounded-md border border-[#d8d2c2] bg-[#faf9f5] px-3.5 py-2.5 text-sm focus:border-[#16130e] focus:outline-none";
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-6 pt-10">
-      <div className="text-center">
-        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-red-600 text-2xl font-black text-white">
-          S
-        </span>
-        <h2 className="mt-3 text-2xl font-extrabold">Operator sign in</h2>
-        <p className="mt-1 text-sm text-slate-500">Security officers and admins only.</p>
+    <div className="mx-auto grid max-w-3xl grid-cols-1 overflow-hidden rounded-xl border border-[#e2ddd0] bg-white md:grid-cols-2">
+      {/* Brand panel */}
+      <div className="ops-grid flex flex-col justify-between bg-[#16130e] p-7 text-[#e8e4d8]">
+        <div>
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#c81e1e] font-display text-lg font-bold text-white">
+            S
+          </span>
+          <p className="mt-5 font-display text-2xl font-bold leading-tight tracking-tight">
+            The night desk
+            <br />
+            never blinks.
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-[#a8a08a]">
+            SilentSOS watches the quiet hours so a human doesn't have to stare at twelve feeds at once.
+          </p>
+        </div>
+        <p className="mt-8 font-mono text-[11px] uppercase tracking-[0.18em] text-[#6b6558]">
+          Local only · nothing leaves this machine
+        </p>
       </div>
-      <form onSubmit={submit} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500" htmlFor="email">
+
+      {/* Form */}
+      <form onSubmit={submit} className="p-7">
+        <h2 className="font-display text-xl font-bold tracking-tight">Operator sign in</h2>
+        <p className="mt-1 text-sm text-[#57534a]">Security officers and admins.</p>
+        <label className="mb-1 mt-5 block font-mono text-[11px] uppercase tracking-[0.14em] text-[#57534a]" htmlFor="email">
           Email
         </label>
         <input
@@ -42,10 +58,7 @@ export default function Login() {
           placeholder="officer@hostel.edu"
           className={field}
         />
-        <label
-          className="mb-1 mt-4 block text-xs font-bold uppercase tracking-wide text-slate-500"
-          htmlFor="password"
-        >
+        <label className="mb-1 mt-4 block font-mono text-[11px] uppercase tracking-[0.14em] text-[#57534a]" htmlFor="password">
           Password
         </label>
         <input
@@ -56,14 +69,14 @@ export default function Login() {
           placeholder="••••••••"
           className={field}
         />
-        {error && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}
+        {error && <p className="mt-3 rounded-md bg-[#c81e1e]/10 px-3 py-2 text-sm font-semibold text-[#c81e1e]">{error}</p>}
         <button
           type="submit"
-          className="mt-5 w-full rounded-lg bg-slate-900 py-2.5 text-sm font-bold text-white hover:bg-slate-800"
+          className="mt-5 w-full rounded-md bg-[#16130e] py-2.5 text-sm font-bold text-white hover:bg-[#2a251c]"
         >
-          Sign In
+          Take the desk →
         </button>
-        <p className="mt-3 text-center text-xs text-slate-400">JWT auth wiring lands in Level 8.</p>
+        <p className="mt-3 text-center font-mono text-[11px] text-[#a8a08a]">JWT handshake arrives in Level 8.</p>
       </form>
     </div>
   );

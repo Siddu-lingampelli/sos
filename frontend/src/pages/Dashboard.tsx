@@ -1,6 +1,6 @@
 import { useState } from "react";
 import CameraFeed from "../components/CameraFeed";
-import { Card, CardTitle, ConfidenceBar, StatCard, StatusBadge } from "../components/ui";
+import { Card, CardTitle, ConfidenceBar, IconCamera, IconClock, IconSiren, StatCard, StatusBadge } from "../components/ui";
 import { API_URL, DEFAULT_CAMERA_SOURCE, MOCK_CAMERAS, MOCK_INCIDENTS } from "../lib/api";
 
 type CamMode = "laptop" | "mobile" | "manual";
@@ -22,12 +22,12 @@ function save(key: string, value: string): void {
 }
 
 const PILL = (active: boolean): string =>
-  `rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
-    active ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-600 hover:bg-slate-300"
+  `rounded-md px-3.5 py-1.5 font-mono text-xs font-semibold tracking-wide transition-colors ${
+    active ? "bg-[#16130e] text-white" : "bg-[#e9e5d8] text-[#57534a] hover:bg-[#dcd6c4]"
   }`;
 
 const INPUT =
-  "min-w-60 flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900";
+  "min-w-60 flex-1 rounded-md border border-[#d8d2c2] bg-[#faf9f5] px-3 py-2 font-mono text-xs focus:border-[#16130e] focus:outline-none";
 
 export default function Dashboard() {
   const [mode, setMode] = useState<CamMode>(() =>
@@ -43,38 +43,37 @@ export default function Dashboard() {
   );
   const [manualUrl, setManualUrl] = useState<string>(() => load("sos.cam.manual", ""));
 
-  const pick = (m: CamMode): void => setMode(m);
   const activeSource = mode === "laptop" ? "0" : mode === "mobile" ? mobileUrl : manualUrl;
   const openCount = MOCK_INCIDENTS.filter((i) => i.status === "OPEN").length;
   const onlineCount = MOCK_CAMERAS.filter((c) => c.status === "online").length;
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Stats */}
+    <div className="flex flex-col gap-5">
+      {/* Telemetry strip */}
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <StatCard label="Active Alerts" value={String(openCount)} sub="Needs human verification" accent="bg-red-500" />
-        <StatCard label="Cameras Online" value={`${onlineCount}/${MOCK_CAMERAS.length}`} sub="Across monitored blocks" accent="bg-emerald-500" />
-        <StatCard label="Incidents Today" value={String(MOCK_INCIDENTS.length)} sub="Including demo rows" accent="bg-sky-500" />
-        <StatCard label="Pipeline" value="Armed" sub="Local AI · no cloud APIs" accent="bg-amber-500" />
+        <StatCard label="Open alerts" value={String(openCount)} sub="waiting on a human" glyph={<IconSiren />} />
+        <StatCard label="Cameras up" value={`${onlineCount}/${MOCK_CAMERAS.length}`} sub="posts reporting in" glyph={<IconCamera />} />
+        <StatCard label="Logged today" value={String(MOCK_INCIDENTS.length)} sub="demo rows for now" glyph={<IconClock />} />
+        <StatCard label="Pipeline" value="Armed" sub="local · no cloud calls" glyph={<IconSiren />} />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         {/* Camera panel */}
         <Card className="xl:col-span-2">
           <CardTitle
-            right={<span className="text-xs font-medium normal-case text-slate-400">Backend: {API_URL}</span>}
+            right={<span className="font-mono text-[11px] text-[#a8a08a]">{API_URL}</span>}
           >
-            Live Camera
+            Live feed · Cam 01
           </CardTitle>
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <button className={PILL(mode === "laptop")} onClick={() => pick("laptop")}>
-              💻 Laptop
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <button className={PILL(mode === "laptop")} onClick={() => setMode("laptop")}>
+              LAPTOP
             </button>
-            <button className={PILL(mode === "mobile")} onClick={() => pick("mobile")}>
-              📱 Mobile
+            <button className={PILL(mode === "mobile")} onClick={() => setMode("mobile")}>
+              MOBILE
             </button>
-            <button className={PILL(mode === "manual")} onClick={() => pick("manual")}>
-              ⌨️ Manual IP
+            <button className={PILL(mode === "manual")} onClick={() => setMode("manual")}>
+              MANUAL IP
             </button>
           </div>
           {mode === "mobile" && (
@@ -86,7 +85,7 @@ export default function Dashboard() {
               }}
               placeholder="http://192.168.1.33:8080/video"
               spellCheck={false}
-              className={`${INPUT} mb-4 w-full`}
+              className={`${INPUT} mb-3 w-full`}
             />
           )}
           {mode === "manual" && (
@@ -96,35 +95,43 @@ export default function Dashboard() {
                 setManualUrl(e.target.value);
                 save("sos.cam.manual", e.target.value);
               }}
-              placeholder="Any stream URL — http://…:8080/video or rtsp://user:pass@host/…"
+              placeholder="http://192.168.1.50:8080/video  ·  rtsp://user:pass@host/…"
               spellCheck={false}
-              className={`${INPUT} mb-4 w-full`}
+              className={`${INPUT} mb-3 w-full`}
             />
           )}
           <CameraFeed source={activeSource} apiNote={API_URL} />
+          <p className="mt-3 font-mono text-[11px] leading-relaxed text-[#a8a08a]">
+            YOLO pose → ByteTrack → fall + inactivity, drawn on the frame by the backend.
+          </p>
         </Card>
 
-        {/* Recent alerts */}
+        {/* Night log */}
         <Card>
-          <CardTitle right={<a href="/alerts" className="text-xs font-bold text-red-600 hover:underline">View all</a>}>
-            Recent Alerts
+          <CardTitle right={<a href="/alerts" className="font-mono text-[11px] font-semibold text-[#c81e1e] hover:underline">QUEUE →</a>}>
+            Night log
           </CardTitle>
-          <ul className="flex flex-col gap-3">
+          <ol className="relative flex flex-col gap-4 border-l border-[#e2ddd0] pl-4">
             {MOCK_INCIDENTS.slice(0, 4).map((i) => (
-              <li key={i.id} className="rounded-xl border border-slate-200 p-3.5">
+              <li key={i.id} className="relative">
+                <span
+                  className={`absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full border-2 border-white ${
+                    i.status === "OPEN" ? "bg-[#c81e1e]" : "bg-[#a8a08a]"
+                  }`}
+                />
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-bold">{i.eventType}</p>
-                  <StatusBadge status={i.status} />
+                  <p className="text-[13px] font-bold leading-snug">{i.eventType}</p>
                 </div>
-                <p className="mt-1 text-xs text-slate-500">
-                  {i.location} · {i.time}
+                <p className="mt-0.5 font-mono text-[11px] text-[#a8a08a]">
+                  {i.time} · {i.location}
                 </p>
-                <div className="mt-2">
+                <div className="mt-1.5 flex items-center gap-2">
                   <ConfidenceBar value={i.confidence} />
+                  <StatusBadge status={i.status} />
                 </div>
               </li>
             ))}
-          </ul>
+          </ol>
         </Card>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { Card, ConfidenceBar, StatusBadge } from "../components/ui";
+import { Card, ConfidenceBar, IconCheck, StatusBadge } from "../components/ui";
 import type { Incident, IncidentStatus } from "../lib/api";
 import { MOCK_INCIDENTS } from "../lib/api";
 
@@ -16,52 +16,56 @@ export default function Alerts() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       {items.length === 0 && (
         <Card>
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-xl">✓</span>
+            <span className="text-[#3f6212]">
+              <IconCheck />
+            </span>
             <div>
-              <p className="font-bold">All clear — no open alerts</p>
-              <p className="text-sm text-slate-500">New possible emergencies will appear here instantly.</p>
+              <p className="font-display font-bold">Queue is clear</p>
+              <p className="text-sm text-[#57534a]">New possible emergencies land here the moment they score.</p>
             </div>
           </div>
         </Card>
       )}
 
       {items.map((i) => (
-        <Card key={i.id} className="border-l-4 border-l-red-500">
+        <Card key={i.id} className="border-l-2 border-l-[#c81e1e]">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-red-600">🚨 Possible emergency</p>
-              <h2 className="mt-1 text-lg font-extrabold">{i.eventType}</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                {i.location} · Camera: {i.camera} · {i.time}
+              <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[#c81e1e]">
+                Possible emergency · #{i.id}
+              </p>
+              <h2 className="mt-1 font-display text-xl font-bold tracking-tight">{i.eventType}</h2>
+              <p className="mt-1 font-mono text-xs text-[#57534a]">
+                {i.location} · {i.camera} · {i.time}
               </p>
             </div>
             <StatusBadge status={i.status} />
           </div>
-          <div className="mt-4">
+          <div className="mt-4 max-w-xs">
             <ConfidenceBar value={i.confidence} />
           </div>
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2 border-t border-[#e2ddd0] pt-4">
             <button
               onClick={() => decide(i.id, "VERIFIED")}
-              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700"
+              className="rounded-md bg-[#c81e1e] px-4 py-2 text-sm font-bold text-white hover:bg-[#8f1414]"
             >
-              Verify Emergency
+              Verify emergency
             </button>
             <button
               onClick={() => decide(i.id, "DISMISSED")}
-              className="rounded-lg bg-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-300"
+              className="rounded-md bg-[#e9e5d8] px-4 py-2 text-sm font-bold text-[#57534a] hover:bg-[#dcd6c4]"
             >
               Dismiss
             </button>
             <Link
               to={`/alert/${i.id}`}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100"
+              className="rounded-md border border-[#d8d2c2] px-4 py-2 text-sm font-bold hover:bg-[#faf9f5]"
             >
-              Open Details
+              Dossier →
             </Link>
           </div>
         </Card>
@@ -69,12 +73,14 @@ export default function Alerts() {
 
       {done.length > 0 && (
         <Card>
-          <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-500">Decided this session</h3>
+          <h3 className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[#57534a]">
+            Decided this shift
+          </h3>
           <ul className="flex flex-col gap-2">
             {done.map((i) => (
-              <li key={i.id} className="flex items-center justify-between text-sm">
+              <li key={i.id} className="flex items-center justify-between gap-3 text-sm">
                 <span>
-                  <span className="font-bold">#{i.id}</span> {i.eventType}
+                  <span className="font-mono font-semibold">#{i.id}</span> {i.eventType}
                 </span>
                 <StatusBadge status={i.status} />
               </li>

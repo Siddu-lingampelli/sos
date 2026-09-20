@@ -4,36 +4,36 @@ import { MOCK_INCIDENTS } from "../lib/api";
 export default function History() {
   return (
     <Card>
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-slate-500">
-          All incidents · {MOCK_INCIDENTS.length}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[#57534a]">
+          {MOCK_INCIDENTS.length} entries
         </h2>
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
-          Demo rows — live API lands in Level 8
+        <span className="rounded-md bg-[#e9e5d8] px-2.5 py-1 font-mono text-[11px] text-[#57534a]">
+          DEMO ROWS — LIVE API IN LEVEL 8
         </span>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead>
-            <tr className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
-              <th className="pb-3 pr-4 font-bold">ID</th>
-              <th className="pb-3 pr-4 font-bold">Event</th>
-              <th className="pb-3 pr-4 font-bold">Location</th>
-              <th className="pb-3 pr-4 font-bold">Time</th>
-              <th className="pb-3 pr-4 font-bold">Confidence</th>
-              <th className="pb-3 font-bold">Status</th>
+            <tr className="border-b border-[#e2ddd0] font-mono text-[11px] uppercase tracking-[0.14em] text-[#a8a08a]">
+              <th className="pb-3 pr-4 font-semibold">Ref</th>
+              <th className="pb-3 pr-4 font-semibold">Event</th>
+              <th className="pb-3 pr-4 font-semibold">Post</th>
+              <th className="pb-3 pr-4 font-semibold">Time</th>
+              <th className="pb-3 pr-4 font-semibold">Score</th>
+              <th className="pb-3 font-semibold">Outcome</th>
             </tr>
           </thead>
           <tbody>
             {MOCK_INCIDENTS.map((i) => (
-              <tr key={i.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                <td className="py-3 pr-4 font-bold">#{i.id}</td>
+              <tr key={i.id} className="border-b border-[#efece2] last:border-0 hover:bg-[#faf9f5]">
+                <td className="py-3 pr-4 font-mono font-semibold">#{i.id}</td>
                 <td className="py-3 pr-4">
                   <p className="font-semibold">{i.eventType}</p>
-                  <p className="text-xs text-slate-500">{i.camera}</p>
+                  <p className="font-mono text-[11px] text-[#a8a08a]">{i.camera}</p>
                 </td>
-                <td className="py-3 pr-4 text-slate-600">{i.location}</td>
-                <td className="py-3 pr-4 text-slate-600">{i.time}</td>
+                <td className="py-3 pr-4 text-[#57534a]">{i.location}</td>
+                <td className="py-3 pr-4 font-mono text-xs">{i.time}</td>
                 <td className="py-3 pr-4">
                   <ConfidenceBar value={i.confidence} />
                 </td>
