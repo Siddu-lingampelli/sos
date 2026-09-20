@@ -34,12 +34,16 @@ const CameraFeed = ({ source }: { source: string }) => {
   );
 };
 
+type CamMode = 'laptop' | 'mobile' | 'manual';
+
 const Dashboard = () => {
-  const [mode, setMode] = useState<'laptop' | 'mobile'>(CAMERA_SOURCE === '0' ? 'laptop' : 'mobile');
+  const [mode, setMode] = useState<CamMode>(CAMERA_SOURCE === '0' ? 'laptop' : 'mobile');
   const [mobileUrl, setMobileUrl] = useState(
     CAMERA_SOURCE && CAMERA_SOURCE !== '0' ? CAMERA_SOURCE : 'http://192.168.1.33:8080/video'
   );
-  const activeSource = mode === 'laptop' ? '0' : mobileUrl;
+  const [manualUrl, setManualUrl] = useState('');
+  const activeSource = mode === 'laptop' ? '0' : mode === 'mobile' ? mobileUrl : manualUrl;
+  const title = mode === 'laptop' ? 'Laptop webcam' : mode === 'mobile' ? 'Mobile camera' : 'Manual camera';
   const btn = (active: boolean) =>
     `px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${active ? 'bg-slate-900 text-white' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`;
   return (
@@ -50,6 +54,7 @@ const Dashboard = () => {
       <span className="text-sm font-medium text-slate-600">Camera:</span>
       <button className={btn(mode === 'laptop')} onClick={() => setMode('laptop')}>Laptop webcam</button>
       <button className={btn(mode === 'mobile')} onClick={() => setMode('mobile')}>Mobile camera</button>
+      <button className={btn(mode === 'manual')} onClick={() => setMode('manual')}>Manual / Other IP</button>
       {mode === 'mobile' && (
         <input
           value={mobileUrl}
@@ -58,13 +63,19 @@ const Dashboard = () => {
           className="flex-1 min-w-64 px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
         />
       )}
+      {mode === 'manual' && (
+        <input
+          value={manualUrl}
+          onChange={(e) => setManualUrl(e.target.value)}
+          placeholder="Paste any stream URL — e.g. http://192.168.1.50:8080/video or rtsp://user:pass@192.168.1.100:554/stream1"
+          className="flex-1 min-w-64 px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
+        />
+      )}
     </div>
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       {/* Live AI Camera Stream Block */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-        <h2 className="font-semibold mb-2">
-          {mode === 'laptop' ? 'Laptop webcam' : 'Mobile camera'}
-        </h2>
+        <h2 className="font-semibold mb-2">{title}</h2>
         <div className="bg-slate-900 rounded-lg overflow-hidden aspect-video flex items-center justify-center">
           <CameraFeed source={activeSource} />
         </div>
