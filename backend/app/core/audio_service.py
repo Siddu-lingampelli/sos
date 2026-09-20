@@ -15,11 +15,14 @@ from .bus import bus
 ai_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../ai"))
 if ai_path not in sys.path:
     sys.path.append(ai_path)
+audio_path = os.path.join(ai_path, "audio")
+if audio_path not in sys.path:
+    sys.path.append(audio_path)
 
 try:
-    from audio.audio_config import AudioConfig
-    from audio.pipeline import AudioPipeline
-    from audio.mic import MicStream
+    from audio_config import AudioConfig
+    from pipeline import AudioPipeline
+    from mic import MicStream
     AUDIO_AVAILABLE = True
 except ImportError as e:
     AUDIO_AVAILABLE = False

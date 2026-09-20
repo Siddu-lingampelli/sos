@@ -193,15 +193,22 @@ def _ensure_source(source: str, rotate: int) -> str:
     key = f"{source}|rot{rotate}"
     with _lock:
         if key in _states:
+            _states[key]["clients"] += 1
             return key
         vid_source = int(source) if source.isdigit() else source
-        st: dict = {"jpg": None, "stop": False}
+        st: dict = {"jpg": None, "stop": False, "clients": 1}
         _states[key] = st
         t = threading.Thread(target=_inference_loop, args=(key, vid_source, rotate, source), daemon=True)
         st["thread"] = t
         t.start()
         return key
 
+def _release_source(key: str):
+    with _lock:
+        if key in _states:
+            _states[key]["clients"] -= 1
+            if _states[key]["clients"] <= 0:
+                _states[key]["stop"] = True
 
 def generate_frames(source: str, rotate: int):
     if not AI_AVAILABLE:
@@ -209,21 +216,23 @@ def generate_frames(source: str, rotate: int):
     key = _ensure_source(source, rotate)
     served = False
     idle = 0
-    while True:
-        with _lock:
-            st = _states.get(key)
-            jpg = st["jpg"] if st else None
-        if jpg is not None:
-            served = True
-            idle = 0
-            yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + jpg + b'\r\n')
-        else:
-            idle += 1
-        if st is None and (served or idle > 15 * 10):
-            # Camera thread died (disconnect) — close connection so the
-            # browser <img onError> fires instead of hanging on last frame
-            break
-        time.sleep(1 / 15)
+    try:
+        while True:
+            with _lock:
+                st = _states.get(key)
+                jpg = st["jpg"] if st else None
+            if jpg is not None:
+                served = True
+                idle = 0
+                yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + jpg + b'\r\n')
+            else:
+                idle += 1
+            if st is None and (served or idle > 15 * 10):
+                # Camera thread died (disconnect)
+                break
+            time.sleep(1 / 15)
+    finally:
+        _release_source(key)
 
 
 @router.get("/video")
