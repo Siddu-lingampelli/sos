@@ -115,6 +115,8 @@ def _apply_rotate(frame, rotate: int):
 
 
 def _inference_loop(source_key: str, vid_source, rotate: int, source: str):
+    from ...core.audio_service import register_engine, unregister_engine
+    
     st = _states[source_key]
     stream = CameraStream(source=vid_source, max_fps=15)
     tracker = PersonTracker(model_path=os.path.join(vision_path, "yolo11n-pose.pt"), cfg=DEFAULT)
@@ -124,6 +126,9 @@ def _inference_loop(source_key: str, vid_source, rotate: int, source: str):
     engine = EmergencyEngine()
     viz = Visualizer()
     from ...core.bus import bus as _bus
+    
+    register_engine(engine)
+    
     last = time.time()
     fps = 0.0
     stride = max(1, DEFAULT.DETECT_STRIDE)
@@ -177,6 +182,7 @@ def _inference_loop(source_key: str, vid_source, rotate: int, source: str):
                 with _lock:
                     st["jpg"] = buf.tobytes()
     finally:
+        unregister_engine(engine)
         stream.release()
         with _lock:
             _states.pop(source_key, None)

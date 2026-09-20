@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.api.api import api_router
 from app.db.session import Base, engine
 from app.models import User, Location, Camera, Incident, DetectionEvent, Alert
+from app.core.audio_service import start_audio_service
 
 app = FastAPI(title="SilentSOS API", version="0.2.0-level2")
 
@@ -21,6 +22,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.on_event("startup")
+def on_startup():
+    start_audio_service()
 
 # Initialize DB tables explicitly for dev (in prod we use alembic/migrations)
 try:
