@@ -18,8 +18,8 @@ class FallConfig:
     HISTORY_LEN: int = 30
     # Minimum keypoint confidence to trust a joint (lower for fallen people)
     KP_CONF: float = 0.25
-    # Minimum YOLO box confidence (increased to 0.45 to prevent detecting wires/ghosts)
-    BOX_CONF: float = 0.45
+    # Minimum YOLO box confidence (balanced: 0.25 ignores most wires, but catches crumpled fallen bodies)
+    BOX_CONF: float = 0.25
     # Inference image size (smaller = faster on CPU)
     IMGSZ: int = 416
     # Downscale huge camera frames (1080p phones) before YOLO, scale boxes back

@@ -85,30 +85,52 @@ class PersonTracker:
                 try:
                     box = boxes[i].xyxy[0].cpu().numpy().tolist()
                     conf = float(boxes[i].conf[0].cpu().numpy())
+                    scale_inv = 1.0 / scale
+                    x1, y1, x2, y2 = [c * scale_inv for c in box] if scale != 1.0 else box
+                    bw, bh = max(1.0, x2 - x1), max(1.0, y2 - y1)
+                    cx_raw, cy_raw = (x1 + x2) / 2 / w, (y1 + y2) / 2 / h
+                    
                     if ids[i] is not None:
                         tid = int(ids[i])
                     else:
-                        # Unique temp ID per untracked detection — never share -1
-                        tid = self._untracked_seq
-                        self._untracked_seq -= 1
+                        # SPATIAL RESURRECTION: ByteTrack often loses IDs when
+                        # people fall because their shape changes drastically.
+                        # We rescue the ID by finding the closest recent track.
+                        best_tid = None
+                        best_dist = 0.2  # Maximum normalized distance to rescue
+                        for past_tid, hist in self.history.items():
+                            if not hist or (now - self.last_seen.get(past_tid, 0)) > 1.5:
+                                continue
+                            last_cx, last_cy = hist[-1].get("cx", cx_raw), hist[-1].get("cy", cy_raw)
+                            import math
+                            dist = math.hypot(cx_raw - last_cx, cy_raw - last_cy)
+                            if dist < best_dist:
+                                best_dist = dist
+                                best_tid = past_tid
+                        
+                        if best_tid is not None:
+                            tid = best_tid
+                        else:
+                            tid = self._untracked_seq
+                            self._untracked_seq -= 1
+
                     kp = kps.data[i].cpu().numpy().tolist() if kps is not None and len(kps.data) > i else []
                     if scale != 1.0:
                         # Map coords back to the original full-size frame
-                        inv = 1.0 / scale
-                        box = [c * inv for c in box]
-                        kp = [[p[0] * inv, p[1] * inv] + p[2:] for p in kp]
+                        kp = [[p[0] * scale_inv, p[1] * scale_inv] + p[2:] for p in kp]
+                        
                 except (IndexError, AttributeError):
                     continue
-                x1, y1, x2, y2 = box
-                bw, bh = max(1.0, x2 - x1), max(1.0, y2 - y1)
+                    
                 hip = _kp_center(kp, [11, 12], self.cfg.KP_CONF)
                 ang = torso_angle_deg(kp, self.cfg.KP_CONF)
+                
                 entry = {
-                    "box": box, "confidence": conf, "keypoints": kp,
-                    "track_id": tid, "cx": (x1 + x2) / 2 / w, "cy": (y1 + y2) / 2 / h,
+                    "box": [x1, y1, x2, y2], "confidence": conf, "keypoints": kp,
+                    "track_id": tid, "cx": cx_raw, "cy": cy_raw,
                     "hip_y": (hip[1] / h) if hip else None,
                     "angle": ang, "aspect": bw / bh, "t": now,
-                    "fw": w, "fh": h,  # frame dims: inactivity normalizes pixel deltas
+                    "fw": w, "fh": h,
                 }
                 self.history[tid].append(entry)
                 self.last_seen[tid] = now
