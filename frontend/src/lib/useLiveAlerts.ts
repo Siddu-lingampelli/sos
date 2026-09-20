@@ -16,13 +16,19 @@ export type WsState = "live" | "retrying" | "demo";
  * surfaces status updates via onUpdate. Auto-reconnects; reports "demo" when
  * the backend is unreachable so pages can fall back to local data.
  */
+export interface LiveActivity {
+  tag: string;
+  text: string;
+}
+
 export function useLiveAlerts(
   onIncident: (inc: LiveIncident) => void,
   onUpdate?: (id: number, status: string) => void,
+  onActivity?: (act: LiveActivity) => void,
 ): WsState {
   const [state, setState] = useState<WsState>("retrying");
-  const cb = useRef({ onIncident, onUpdate });
-  cb.current = { onIncident, onUpdate };
+  const cb = useRef({ onIncident, onUpdate, onActivity });
+  cb.current = { onIncident, onUpdate, onActivity };
 
   useEffect(() => {
     let ws: WebSocket | null = null;
@@ -52,6 +58,8 @@ export function useLiveAlerts(
             });
           } else if (msg["type"] === "incident_updated" && cb.current.onUpdate) {
             cb.current.onUpdate(Number(msg["id"]), String(msg["status"]));
+          } else if (msg["type"] === "activity" && cb.current.onActivity) {
+            cb.current.onActivity({ tag: String(msg["tag"] ?? "SYS"), text: String(msg["text"] ?? "") });
           }
         } catch {
           /* malformed frame — ignore */

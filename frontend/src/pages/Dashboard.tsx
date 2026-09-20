@@ -5,7 +5,7 @@ import type { Incident } from "../lib/api";
 import { API_URL, DataAPI, MOCK_INCIDENTS } from "../lib/api";
 import { useCamera } from "../lib/camera";
 import { useLiveAlerts } from "../lib/useLiveAlerts";
-import type { LiveIncident } from "../lib/useLiveAlerts";
+import type { LiveActivity, LiveIncident } from "../lib/useLiveAlerts";
 
 const INPUT =
   "w-full rounded-md border border-[#d8d2c2] bg-[#faf9f5] px-3 py-2 font-mono text-xs focus:border-[#16130e] focus:outline-none";
@@ -21,6 +21,7 @@ export default function Dashboard() {
   const [items, setItems] = useState<Incident[]>(MOCK_INCIDENTS);
   const [live, setLive] = useState(false);
   const [dbState, setDbState] = useState("unknown");
+  const [activity, setActivity] = useState<{ time: string; tag: string; text: string }[]>([]);
   const [rotate, setRotate] = useState<number>(() => {
     try {
       const v = Number(localStorage.getItem("sos.cam.rotate"));
@@ -88,7 +89,12 @@ export default function Dashboard() {
       ...prev,
     ]);
   }, []);
-  useLiveAlerts(onIncident);
+  const onActivity = useCallback((act: LiveActivity) => {
+    setActivity((prev) =>
+      [{ time: new Date().toLocaleTimeString(), tag: act.tag, text: act.text }, ...prev].slice(0, 10),
+    );
+  }, []);
+  useLiveAlerts(onIncident, undefined, onActivity);
 
   const openItems = items.filter((i) => i.status === "OPEN");
 
@@ -167,7 +173,16 @@ export default function Dashboard() {
             Logs
           </CardTitle>
           <ol className="dash-logs-list flex min-h-0 flex-1 flex-col divide-y divide-[#efece2] overflow-y-auto font-mono text-xs">
-            {items.length === 0 && (
+            {activity.map((a, idx) => (
+              <li key={`live-${idx}`} className="flex items-baseline gap-3 bg-emerald-50/50 py-1.5">
+                <span className="shrink-0 tabular-nums text-[#a8a08a]">{a.time}</span>
+                <span className="shrink-0 rounded bg-[#16130e] px-1.5 py-0.5 text-[10px] font-bold tracking-widest text-emerald-400">
+                  {a.tag}
+                </span>
+                <span className="truncate text-[#33302a]">{a.text}</span>
+              </li>
+            ))}
+            {items.length === 0 && activity.length === 0 && (
               <li className="flex items-baseline gap-3 py-1.5">
                 <span className="shrink-0 tabular-nums text-[#a8a08a]">--:--:--</span>
                 <span className="shrink-0 rounded bg-[#e9e5d8] px-1.5 py-0.5 text-[10px] font-bold tracking-widest text-[#57534a]">

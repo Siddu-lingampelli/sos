@@ -28,6 +28,7 @@ try:
     from tracker import PersonTracker
     from fall_detector import FallDetector
     from inactivity import InactivityMonitor
+    from activity import ActivityLog
     from fusion import EmergencyEngine
     from visualizer import Visualizer
     from config import DEFAULT
@@ -119,8 +120,10 @@ def _inference_loop(source_key: str, vid_source, rotate: int, source: str):
     tracker = PersonTracker(model_path=os.path.join(vision_path, "yolo11n-pose.pt"), cfg=DEFAULT)
     fall = FallDetector(cfg=DEFAULT)
     inact = InactivityMonitor(cfg=DEFAULT)
+    activity = ActivityLog(cfg=DEFAULT)
     engine = EmergencyEngine()
     viz = Visualizer()
+    from ...core.bus import bus as _bus
     last = time.time()
     fps = 0.0
     stride = max(1, DEFAULT.DETECT_STRIDE)
@@ -152,9 +155,12 @@ def _inference_loop(source_key: str, vid_source, rotate: int, source: str):
                     score, estate, _ev = engine.update(tid, p)
                     p["eng_score"] = score
                     p["eng_state"] = estate
+                    for ev in activity.update(tid, p, hist):
+                        _bus.broadcast_sync({"type": "activity", "tag": ev["tag"], "text": ev["text"]})
                 fall.prune(tracker.history.keys())
                 inact.prune(tracker.history.keys())
                 engine.prune(tracker.history.keys())
+                activity.prune(tracker.history.keys())
                 while True:
                     inc = engine.pop_incident()
                     if inc is None:

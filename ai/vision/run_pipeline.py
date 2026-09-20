@@ -11,6 +11,7 @@ from camera import CameraStream
 from tracker import PersonTracker
 from fall_detector import FallDetector
 from inactivity import InactivityMonitor
+from activity import ActivityLog
 from fusion import EmergencyEngine
 from visualizer import Visualizer
 from config import DEFAULT
@@ -31,6 +32,7 @@ def main():
     tracker = PersonTracker(model_path="yolo11n-pose.pt", cfg=DEFAULT)
     fall = FallDetector(cfg=DEFAULT)
     inact = InactivityMonitor(cfg=DEFAULT)
+    activity = ActivityLog(cfg=DEFAULT)
     engine = EmergencyEngine()
     visualizer = Visualizer()
 
@@ -76,9 +78,12 @@ def main():
                     score, estate, _ev = engine.update(tid, p)
                     p["eng_score"] = score
                     p["eng_state"] = estate
+                    for ev in activity.update(tid, p, hist):
+                        print(f"   [{ev['tag']}] {ev['text']}")
                 fall.prune(tracker.history.keys())
                 inact.prune(tracker.history.keys())
                 engine.prune(tracker.history.keys())
+                activity.prune(tracker.history.keys())
                 while True:
                     inc = engine.pop_incident()
                     if inc is None:
