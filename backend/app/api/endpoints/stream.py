@@ -44,21 +44,33 @@ def _inference_loop(source_key: str, vid_source):
     viz = Visualizer()
     last = time.time()
     fps = 0.0
+    stride = max(1, DEFAULT.DETECT_STRIDE)
+    last_persons: list = []
+    last_latency = 0.0
+    n = 0
     try:
         for ret, frame in stream.read_frames():
             if not ret or frame is None or st.get("stop"):
                 break
+            n += 1
             now = time.time()
             dt = now - last
             if dt > 0:
                 fps = 0.1 * (1.0 / dt) + 0.9 * fps
             last = now
-            persons, latency = tracker.process(frame)
-            for p in persons:
-                fall.update(p, tracker.track_history(p.get("track_id", -1)))
-            fall.prune(tracker.history.keys())
-            out = viz.draw(frame, persons, fps, latency)
-            ok, buf = cv2.imencode('.jpg', out)
+            if n % stride == 1:
+                # Heavy YOLO inference only on stride frames
+                persons, last_latency = tracker.process(frame)
+                for p in persons:
+                    fall.update(p, tracker.track_history(p.get("track_id", -1)))
+                fall.prune(tracker.history.keys())
+                last_persons = persons
+            out = viz.draw(frame, last_persons, fps, last_latency)
+            h, w = out.shape[:2]
+            if w > DEFAULT.STREAM_WIDTH:
+                scale = DEFAULT.STREAM_WIDTH / w
+                out = cv2.resize(out, (DEFAULT.STREAM_WIDTH, int(h * scale)))
+            ok, buf = cv2.imencode('.jpg', out, [cv2.IMWRITE_JPEG_QUALITY, DEFAULT.JPEG_QUALITY])
             if ok:
                 with _lock:
                     st["jpg"] = buf.tobytes()

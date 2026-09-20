@@ -53,6 +53,7 @@ class PersonTracker:
         results = self.model.track(
             frame, persist=True, verbose=False,
             conf=self.cfg.BOX_CONF, tracker="bytetrack.yaml",
+            imgsz=self.cfg.IMGSZ,
         )
         latency = time.time() - t0
         persons = []

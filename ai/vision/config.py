@@ -20,6 +20,14 @@ class FallConfig:
     KP_CONF: float = 0.4
     # Minimum YOLO box confidence
     BOX_CONF: float = 0.15
+    # Inference image size (smaller = faster on CPU, e.g. 512 or 416)
+    IMGSZ: int = 640
+    # Run YOLO every Nth frame, reuse last result in between (big CPU saver)
+    DETECT_STRIDE: int = 2
+    # Max width of streamed/drawn frame (downscaled before JPEG encode)
+    STREAM_WIDTH: int = 640
+    # JPEG quality for MJPEG stream (lower = less bandwidth/CPU)
+    JPEG_QUALITY: int = 70
 
 
 DEFAULT = FallConfig()
