@@ -1,20 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import CameraFeed from "../components/CameraFeed";
-import { Card, CardTitle, ConfidenceBar, IconCamera, IconClock, IconSiren, StatCard, StatusBadge } from "../components/ui";
+import { Card, CardTitle, ConfidenceBar, StatusBadge } from "../components/ui";
 import type { Incident } from "../lib/api";
-import { API_URL, DEFAULT_CAMERA_SOURCE, DataAPI, MOCK_CAMERAS, MOCK_INCIDENTS } from "../lib/api";
+import { API_URL, DEFAULT_CAMERA_SOURCE, DataAPI, MOCK_INCIDENTS } from "../lib/api";
 import { useLiveAlerts } from "../lib/useLiveAlerts";
 import type { LiveIncident } from "../lib/useLiveAlerts";
 
 type CamMode = "laptop" | "mobile" | "manual";
-
-const MODES: { id: CamMode; label: string; hint: string }[] = [
-  { id: "laptop", label: "Laptop", hint: "Built-in webcam · source 0" },
-  { id: "mobile", label: "Mobile", hint: "Phone IP-camera app" },
-  { id: "manual", label: "Manual IP", hint: "Any http / rtsp URL" },
-];
-
-const STAGES = ["Capture", "Pose", "Track", "Fall", "Still", "Score"];
 
 function load(key: string, fallback: string): string {
   try {
@@ -32,9 +24,18 @@ function save(key: string, value: string): void {
   }
 }
 
+const PILL = (active: boolean): string =>
+  `rounded-md px-3 py-1.5 font-mono text-[11px] font-bold tracking-widest transition-colors ${
+    active ? "bg-[#16130e] text-white" : "bg-[#e9e5d8] text-[#57534a] hover:bg-[#dcd6c4]"
+  }`;
+
 const INPUT =
   "w-full rounded-md border border-[#d8d2c2] bg-[#faf9f5] px-3 py-2 font-mono text-xs focus:border-[#16130e] focus:outline-none";
 
+/**
+ * Sketch geometry: center column dominates (video fills, logs beneath),
+ * alerts pinned to a fixed 300px right rail. Page is viewport-locked on xl.
+ */
 export default function Dashboard() {
   const [mode, setMode] = useState<CamMode>(() =>
     DEFAULT_CAMERA_SOURCE === "0" ? "laptop" : "mobile",
@@ -95,75 +96,65 @@ export default function Dashboard() {
   useLiveAlerts(onIncident);
 
   const activeSource = mode === "laptop" ? "0" : mode === "mobile" ? mobileUrl : manualUrl;
-  const openCount = items.filter((i) => i.status === "OPEN").length;
-  const onlineCount = MOCK_CAMERAS.filter((c) => c.status === "online").length;
+  const openItems = items.filter((i) => i.status === "OPEN");
 
   return (
-    <div className="flex flex-col gap-5">
-      {/* Telemetry strip */}
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <StatCard label="Open alerts" value={String(openCount)} sub={live ? "live from engine" : "demo rows for now"} glyph={<IconSiren />} />
-        <StatCard label="Cameras up" value={`${onlineCount}/${MOCK_CAMERAS.length}`} sub="posts reporting in" glyph={<IconCamera />} />
-        <StatCard label="Logged" value={String(items.length)} sub={live ? "live from backend" : "demo rows for now"} glyph={<IconClock />} />
-        <StatCard label="Pipeline" value="Armed" sub="local · no cloud calls" glyph={<IconSiren />} />
+    <div className="flex flex-col gap-4 xl:h-full xl:min-h-0">
+      {/* Slim status line */}
+      <div className="flex shrink-0 flex-wrap items-center gap-x-5 gap-y-1 font-mono text-[11px] tracking-wider text-[#57534a]">
+        <span>
+          OPEN <strong className="text-[#c81e1e]">{openItems.length}</strong>
+        </span>
+        <span>
+          ENGINE <strong className="text-[#3f6212]">ARMED</strong>
+        </span>
+        <span>
+          FEED <strong className={live ? "text-[#3f6212]" : "text-[#a8a08a]"}>{live ? "● LIVE" : "○ LOCAL"}</strong>
+        </span>
+        <span className="ml-auto hidden sm:inline">{API_URL}</span>
       </div>
 
-      {/* Video + alerts side by side (per sketch) */}
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-4">
-        {/* VIDEO — the big box */}
-        <Card className="xl:col-span-3">
-          <CardTitle right={<span className="font-mono text-[11px] text-[#a8a08a]">CAM 01 · MAIN HALLWAY</span>}>
-            Live feed
-          </CardTitle>
-          <div className="mb-4 grid grid-cols-1 gap-2 md:grid-cols-3">
-            {MODES.map((m) => {
-              const active = mode === m.id;
-              return (
-                <button
-                  key={m.id}
-                  onClick={() => setMode(m.id)}
-                  className={`rounded-lg border px-4 py-3 text-left transition-colors ${
-                    active
-                      ? "border-[#16130e] bg-[#16130e] text-white"
-                      : "border-[#e2ddd0] bg-[#faf9f5] hover:border-[#a8a08a]"
-                  }`}
-                >
-                  <span className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold tracking-widest">{m.label.toUpperCase()}</span>
-                    <span className={`h-2 w-2 rounded-full ${active ? "rec-dot bg-emerald-400" : "bg-[#d8d2c2]"}`} />
-                  </span>
-                  <span className="mt-1 block text-xs text-[#a8a08a]">{m.hint}</span>
-                </button>
-              );
-            })}
-          </div>
-          {mode === "mobile" && (
-            <input
-              value={mobileUrl}
-              onChange={(e) => {
-                setMobileUrl(e.target.value);
-                save("sos.cam.mobile", e.target.value);
-              }}
-              placeholder="http://192.168.1.33:8080/video"
-              spellCheck={false}
-              className={`${INPUT} mb-4`}
-            />
-          )}
-          {mode === "manual" && (
-            <input
-              value={manualUrl}
-              onChange={(e) => {
-                setManualUrl(e.target.value);
-                save("sos.cam.manual", e.target.value);
-              }}
-              placeholder="http://192.168.1.50:8080/video  ·  rtsp://user:pass@host/…"
-              spellCheck={false}
-              className={`${INPUT} mb-4`}
-            />
-          )}
-          <CameraFeed source={activeSource} apiNote={API_URL} />
-          <div className="mt-4 flex flex-col gap-3 border-t border-[#e2ddd0] pt-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[11px] text-[#57534a]">
+      {/* Center (video + logs) | right alerts rail */}
+      <div className="grid grid-cols-1 gap-4 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_300px]">
+        {/* CENTER — video fills, logs immediately beneath */}
+        <div className="flex min-h-0 flex-col gap-4">
+          <Card className="flex min-h-0 flex-1 flex-col">
+            <CardTitle right={<span className="font-mono text-[11px] text-[#a8a08a]">CAM 01 · MAIN HALLWAY</span>}>
+              Live feed
+            </CardTitle>
+            <div className="mb-3 flex shrink-0 flex-wrap items-center gap-2">
+              <button className={PILL(mode === "laptop")} onClick={() => setMode("laptop")}>LAPTOP</button>
+              <button className={PILL(mode === "mobile")} onClick={() => setMode("mobile")}>MOBILE</button>
+              <button className={PILL(mode === "manual")} onClick={() => setMode("manual")}>MANUAL IP</button>
+              {mode === "mobile" && (
+                <input
+                  value={mobileUrl}
+                  onChange={(e) => {
+                    setMobileUrl(e.target.value);
+                    save("sos.cam.mobile", e.target.value);
+                  }}
+                  placeholder="http://192.168.1.33:8080/video"
+                  spellCheck={false}
+                  className={`${INPUT} min-w-52 flex-1`}
+                />
+              )}
+              {mode === "manual" && (
+                <input
+                  value={manualUrl}
+                  onChange={(e) => {
+                    setManualUrl(e.target.value);
+                    save("sos.cam.manual", e.target.value);
+                  }}
+                  placeholder="http://192.168.1.50:8080/video  ·  rtsp://user:pass@host/…"
+                  spellCheck={false}
+                  className={`${INPUT} min-w-52 flex-1`}
+                />
+              )}
+            </div>
+            <div className="min-h-0 flex-1">
+              <CameraFeed source={activeSource} apiNote={API_URL} />
+            </div>
+            <div className="mt-3 flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[11px] text-[#57534a]">
               <span className="inline-flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-sm bg-[#16a34a]" /> TRACKING
               </span>
@@ -174,90 +165,70 @@ export default function Dashboard() {
                 <span className="h-2 w-2 rounded-sm bg-[#c81e1e]" /> EMERGENCY
               </span>
             </div>
-            <ol className="flex flex-wrap items-center gap-1 font-mono text-[11px]">
-              {STAGES.map((s, idx) => (
-                <li key={s} className="flex items-center gap-1">
-                  <span className="rounded bg-[#16130e] px-2 py-0.5 font-semibold text-emerald-400">
-                    {s.toUpperCase()}
+          </Card>
+
+          {/* LOGS — directly under the camera, center column only */}
+          <Card className="shrink-0">
+            <CardTitle right={<span className="font-mono text-[11px] text-[#a8a08a]">TAIL · {live ? "LIVE" : "DEMO"}</span>}>
+              Logs
+            </CardTitle>
+            <ol className="flex max-h-36 flex-col divide-y divide-[#efece2] overflow-y-auto font-mono text-xs">
+              {items.slice(0, 6).map((i) => (
+                <li key={i.id} className="flex items-baseline gap-3 py-1.5">
+                  <span className="shrink-0 tabular-nums text-[#a8a08a]">{i.time}</span>
+                  <span
+                    className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold tracking-widest ${
+                      i.status === "OPEN" ? "bg-[#c81e1e] text-white" : "bg-[#e9e5d8] text-[#57534a]"
+                    }`}
+                  >
+                    {i.status === "OPEN" ? "ALERT" : i.status}
                   </span>
-                  {idx < STAGES.length - 1 && <span className="text-[#d8d2c2]">→</span>}
+                  <span className="truncate text-[#33302a]">
+                    {i.eventType} — {i.location} · score {i.confidence}
+                  </span>
                 </li>
               ))}
             </ol>
-          </div>
-        </Card>
+          </Card>
+        </div>
 
-        {/* ALERTS — tall right rail */}
-        <Card className="flex flex-col">
+        {/* RIGHT — fixed 300px alerts rail */}
+        <Card className="flex min-h-0 flex-col xl:overflow-hidden">
           <CardTitle
             right={
-              <span className="flex items-center gap-2">
-                {live && (
-                  <span className="rounded bg-emerald-100 px-1.5 py-0.5 font-mono text-[10px] font-bold text-emerald-700">
-                    LIVE
-                  </span>
-                )}
-                <a href="/alerts" className="font-mono text-[11px] font-semibold text-[#c81e1e] hover:underline">
-                  ALL →
-                </a>
-              </span>
+              <a href="/alerts" className="font-mono text-[11px] font-semibold text-[#c81e1e] hover:underline">
+                ALL →
+              </a>
             }
           >
             Alerts
           </CardTitle>
-          {openCount === 0 ? (
+          {openItems.length === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center gap-1 py-10 text-center">
               <p className="font-display font-bold">Queue clear</p>
               <p className="max-w-[180px] text-xs text-[#57534a]">Firings from the engine land here live.</p>
             </div>
           ) : (
-            <ul className="flex flex-1 flex-col gap-3 overflow-y-auto">
-              {items
-                .filter((i) => i.status === "OPEN")
-                .slice(0, 6)
-                .map((i) => (
-                  <li key={i.id} className="rounded-lg border border-[#e2ddd0] bg-[#faf9f5] p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-[11px] font-bold text-[#c81e1e]">#{i.id}</span>
-                      <StatusBadge status={i.status} />
-                    </div>
-                    <p className="mt-1 text-[13px] font-bold leading-snug">{i.eventType}</p>
-                    <p className="mt-0.5 font-mono text-[11px] text-[#a8a08a]">
-                      {i.time} · {i.location}
-                    </p>
-                    <div className="mt-2">
-                      <ConfidenceBar value={i.confidence} />
-                    </div>
-                  </li>
-                ))}
+            <ul className="flex flex-1 flex-col gap-3 overflow-y-auto pr-0.5">
+              {openItems.slice(0, 8).map((i) => (
+                <li key={i.id} className="rounded-lg border border-[#e2ddd0] bg-[#faf9f5] p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-[11px] font-bold text-[#c81e1e]">#{i.id}</span>
+                    <StatusBadge status={i.status} />
+                  </div>
+                  <p className="mt-1 text-[13px] font-bold leading-snug">{i.eventType}</p>
+                  <p className="mt-0.5 font-mono text-[11px] text-[#a8a08a]">
+                    {i.time} · {i.location}
+                  </p>
+                  <div className="mt-2">
+                    <ConfidenceBar value={i.confidence} />
+                  </div>
+                </li>
+              ))}
             </ul>
           )}
         </Card>
       </div>
-
-      {/* LOGS — full-width strip under the video */}
-      <Card>
-        <CardTitle right={<span className="font-mono text-[11px] text-[#a8a08a]">TAIL · {live ? "LIVE" : "DEMO"}</span>}>
-          Logs
-        </CardTitle>
-        <ol className="flex flex-col divide-y divide-[#efece2] font-mono text-xs">
-          {items.slice(0, 5).map((i) => (
-            <li key={i.id} className="flex items-baseline gap-3 py-1.5">
-              <span className="shrink-0 tabular-nums text-[#a8a08a]">{i.time}</span>
-              <span
-                className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold tracking-widest ${
-                  i.status === "OPEN" ? "bg-[#c81e1e] text-white" : "bg-[#e9e5d8] text-[#57534a]"
-                }`}
-              >
-                {i.status === "OPEN" ? "ALERT" : i.status}
-              </span>
-              <span className="truncate text-[#33302a]">
-                {i.eventType} — {i.location} · score {i.confidence}
-              </span>
-            </li>
-          ))}
-        </ol>
-      </Card>
     </div>
   );
 }

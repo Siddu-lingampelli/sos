@@ -36,9 +36,9 @@ export default function Layout() {
   const head = TITLES[pathname] ?? TITLES[base] ?? { kicker: "SilentSOS", title: "Console" };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen w-full overflow-hidden">
       {/* Rail */}
-      <aside className="flex w-[248px] shrink-0 flex-col bg-[#16130e] text-[#e8e4d8]">
+      <aside className="flex w-[208px] shrink-0 flex-col bg-[#16130e] text-[#e8e4d8]">
         <Link to="/" className="flex items-center gap-3 px-5 pb-7 pt-6">
           <span className="relative flex h-10 w-10 items-center justify-center rounded-lg bg-[#c81e1e]">
             <span className="font-display text-lg font-bold text-white">S</span>
@@ -99,10 +99,10 @@ export default function Layout() {
 
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between border-b border-[#e2ddd0] bg-[#f4f2ec]/90 px-8 py-5 backdrop-blur">
+        <header className="flex shrink-0 items-center justify-between border-b border-[#e2ddd0] bg-[#f4f2ec]/90 px-5 py-3 backdrop-blur">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#a8a08a]">{head.kicker}</p>
-            <h1 className="font-display text-[22px] font-bold leading-tight tracking-tight">{head.title}</h1>
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#a8a08a]">{head.kicker}</p>
+            <h1 className="font-display text-lg font-bold leading-tight tracking-tight">{head.title}</h1>
           </div>
           <div className="flex items-center gap-3">
             <Clock />
@@ -113,12 +113,9 @@ export default function Layout() {
             </span>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-7xl flex-1 px-8 py-7">
+        <main className="min-h-0 flex-1 overflow-y-auto p-4 xl:overflow-hidden">
           <Outlet />
         </main>
-        <footer className="px-8 pb-5 font-mono text-[11px] text-[#a8a08a]">
-          SilentSOS · AI-assisted detection — every alert needs a human decision.
-        </footer>
       </div>
     </div>
   );

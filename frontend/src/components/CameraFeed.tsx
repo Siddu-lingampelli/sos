@@ -6,7 +6,7 @@ interface Props {
   apiNote: string;
 }
 
-/** Live MJPEG feed from the backend AI pipeline, framed like a viewfinder. */
+/** Live MJPEG feed — fills its parent (viewfinder chrome overlaid). */
 export default function CameraFeed({ source, apiNote }: Props) {
   const [offline, setOffline] = useState(false);
 
@@ -16,7 +16,7 @@ export default function CameraFeed({ source, apiNote }: Props) {
 
   if (!source) {
     return (
-      <div className="ops-grid flex aspect-video flex-col items-center justify-center gap-1 rounded-lg bg-[#16130e] px-6 text-center">
+      <div className="ops-grid flex h-full min-h-[280px] w-full flex-col items-center justify-center gap-1 rounded-lg bg-[#16130e] px-6 text-center">
         <p className="font-display font-semibold text-[#f4f2ec]">No feed selected</p>
         <p className="max-w-sm text-sm text-[#a8a08a]">
           Choose laptop, mobile, or a manual URL above to open a live feed.
@@ -27,7 +27,7 @@ export default function CameraFeed({ source, apiNote }: Props) {
 
   if (offline) {
     return (
-      <div className="ops-grid flex aspect-video flex-col items-center justify-center gap-1 rounded-lg bg-[#16130e] px-6 text-center">
+      <div className="ops-grid flex h-full min-h-[280px] w-full flex-col items-center justify-center gap-1 rounded-lg bg-[#16130e] px-6 text-center">
         <p className="font-display font-semibold text-[#f4f2ec]">Feed unreachable</p>
         <p className="max-w-sm text-sm text-[#a8a08a]">
           Backend at {apiNote} isn't answering, or the camera URL is wrong. Check both and retry.
@@ -37,12 +37,12 @@ export default function CameraFeed({ source, apiNote }: Props) {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-lg bg-[#16130e]">
+    <div className="relative h-full min-h-[280px] w-full overflow-hidden rounded-lg bg-[#16130e]">
       <img
         key={source}
         src={streamUrl(source)}
         alt="Live AI camera feed"
-        className="aspect-video w-full object-cover"
+        className="absolute inset-0 h-full w-full object-cover"
         onError={() => setOffline(true)}
       />
       <span className="vf-corner vf-tl" />
