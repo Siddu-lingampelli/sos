@@ -15,8 +15,10 @@ class SileroVAD:
 
     def _load(self):
         import torch
+        # trust_repo=True silences the prompt; verbose=False silences the "Using cache found in..." spam
         self.model, _utils = torch.hub.load(repo_or_dir="snakers4/silero-vad",
-                                            model="silero_vad", force_reload=False)
+                                            model="silero_vad", force_reload=False,
+                                            trust_repo=True, verbose=False)
         self.model.eval()
 
     def reset(self):
