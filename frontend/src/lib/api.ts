@@ -91,10 +91,9 @@ export function clearToken(): void {
 
 /* ---- typed API client (throws on HTTP error) ---- */
 
+// Removed JWT/401 bounce for Level 8 local-only prototype
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  const token = getToken();
-  if (token) headers["Authorization"] = `Bearer ${token}`;
   
   let res: Response;
   try {
@@ -104,12 +103,6 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   if (!res.ok) {
-    if (res.status === 401) {
-      clearToken();
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
-      }
-    }
     throw new Error(`API error ${res.status} on ${path}`);
   }
   return (await res.json()) as T;
