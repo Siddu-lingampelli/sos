@@ -5,11 +5,13 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "engine")))
 
 from camera import CameraStream
 from tracker import PersonTracker
 from fall_detector import FallDetector
 from inactivity import InactivityMonitor
+from fusion import EmergencyEngine
 from visualizer import Visualizer
 from config import DEFAULT
 
@@ -29,6 +31,7 @@ def main():
     tracker = PersonTracker(model_path="yolo11n-pose.pt", cfg=DEFAULT)
     fall = FallDetector(cfg=DEFAULT)
     inact = InactivityMonitor(cfg=DEFAULT)
+    engine = EmergencyEngine()
     visualizer = Visualizer()
 
     writer = None
@@ -70,8 +73,18 @@ def main():
                     fall.update(p, hist)
                     inact.update(tid, hist, p.get("fall_state", "NORMAL"))
                     p.update(inact.info(tid, hist))
+                    score, estate, _ev = engine.update(tid, p)
+                    p["eng_score"] = score
+                    p["eng_state"] = estate
                 fall.prune(tracker.history.keys())
                 inact.prune(tracker.history.keys())
+                engine.prune(tracker.history.keys())
+                while True:
+                    inc = engine.pop_incident()
+                    if inc is None:
+                        break
+                    print(f"   🚨 POSSIBLE EMERGENCY track={inc['track_id']} "
+                          f"conf={inc['confidence']:.0%} ev={inc['event_type']}")
                 last_persons = persons
             persons, latency = last_persons, last_latency
 

@@ -51,6 +51,14 @@ class Visualizer:
             elif ist == "INACTIVE":
                 cv2.putText(out_frame, "INACTIVE - POSSIBLE EMERGENCY", (x1, y2 + 18),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 255), 2)
+            # Level 7: engine score badge
+            esc = person.get("eng_score")
+            if esc is not None:
+                est = person.get("eng_state", "")
+                ecol = (0, 0, 255) if est == "POSSIBLE_EMERGENCY" else (
+                    (0, 165, 255) if est == "MONITORING" else (0, 200, 0))
+                cv2.putText(out_frame, f"E{esc:.0f} {est}", (x1, y2 + 38),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.55, ecol, 2)
             
             # Keypoints & Skeleton
             keypoints = person.get("keypoints", [])

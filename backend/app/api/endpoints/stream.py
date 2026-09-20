@@ -19,17 +19,69 @@ vision_path = os.path.join(ai_path, "vision")
 if vision_path not in sys.path:
     sys.path.append(vision_path)
 
+engine_path = os.path.join(ai_path, "engine")
+if engine_path not in sys.path:
+    sys.path.append(engine_path)
+
 try:
     from camera import CameraStream
     from tracker import PersonTracker
     from fall_detector import FallDetector
     from inactivity import InactivityMonitor
+    from fusion import EmergencyEngine
     from visualizer import Visualizer
     from config import DEFAULT
     AI_AVAILABLE = True
 except ImportError as e:
     AI_AVAILABLE = False
     print(f"WARNING: Could not import AI vision modules: {e}")
+
+try:
+    from ...db.session import SessionLocal
+    from ...models import Location, Camera, Incident, DetectionEvent, IncidentStatus
+    DB_AVAILABLE = True
+except Exception as e:
+    DB_AVAILABLE = False
+    print(f"WARNING: incident storage unavailable: {e}")
+
+
+def _store_incident(payload: dict, source: str) -> None:
+    """Level 7.7: persist a fired POSSIBLE_EMERGENCY as incident + events.
+
+    Creates the location/camera rows on first sight (source-labelled), so a
+    dashboard with zero manual setup still accumulates real history.
+    Any DB failure degrades to a log line — the stream must never die.
+    """
+    if not DB_AVAILABLE:
+        print(f"[engine] no DB, incident dropped: {payload['event_type']}")
+        return
+    db = SessionLocal()
+    try:
+        loc = db.query(Location).filter(Location.name == "Auto").first()
+        if loc is None:
+            loc = Location(name="Auto", building="-", floor="-")
+            db.add(loc)
+            db.flush()
+        cam = db.query(Camera).filter(Camera.name == f"stream:{source}").first()
+        if cam is None:
+            cam = Camera(name=f"stream:{source}", location_id=loc.id, status="active")
+            db.add(cam)
+            db.flush()
+        inc = Incident(camera_id=cam.id, event_type=payload["event_type"],
+                       confidence=payload["confidence"], status=IncidentStatus.OPEN)
+        db.add(inc)
+        db.flush()
+        for ev in payload.get("evidence", []):
+            db.add(DetectionEvent(incident_id=inc.id, event_type=ev["signal"],
+                                  value=str(ev["points"])))
+        db.commit()
+        print(f"[engine] incident #{inc.id} stored: {payload['event_type']} "
+              f"({payload['confidence']:.0%})")
+    except Exception as e:
+        db.rollback()
+        print(f"[engine] incident store failed (stream continues): {e}")
+    finally:
+        db.close()
 
 router = APIRouter()
 
@@ -43,6 +95,7 @@ def _inference_loop(source_key: str, vid_source):
     tracker = PersonTracker(model_path=os.path.join(vision_path, "yolo11n-pose.pt"), cfg=DEFAULT)
     fall = FallDetector(cfg=DEFAULT)
     inact = InactivityMonitor(cfg=DEFAULT)
+    engine = EmergencyEngine()
     viz = Visualizer()
     last = time.time()
     fps = 0.0
@@ -69,8 +122,17 @@ def _inference_loop(source_key: str, vid_source):
                     fall.update(p, hist)
                     inact.update(tid, hist, p.get("fall_state", "NORMAL"))
                     p.update(inact.info(tid, hist))
+                    score, estate, _ev = engine.update(tid, p)
+                    p["eng_score"] = score
+                    p["eng_state"] = estate
                 fall.prune(tracker.history.keys())
                 inact.prune(tracker.history.keys())
+                engine.prune(tracker.history.keys())
+                while True:
+                    inc = engine.pop_incident()
+                    if inc is None:
+                        break
+                    _store_incident(inc, source)
                 last_persons = persons
             out = viz.draw(frame, last_persons, fps, last_latency)
             h, w = out.shape[:2]
