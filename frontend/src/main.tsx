@@ -1,10 +1,31 @@
-import { StrictMode } from 'react'
+import { StrictMode, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router'
 import './index.css'
 
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+const CAMERA_SOURCE: string = import.meta.env.VITE_CAMERA_SOURCE ?? ''
+
 // Level 1 placeholders + Camera Stream integration
 const Login = () => <div className="p-8"><h1 className="text-2xl font-bold text-red-600">Login</h1><p>Level 2 task...</p></div>;
+
+const CameraFeed = () => {
+  const [offline, setOffline] = useState(false);
+  if (!CAMERA_SOURCE) {
+    return <span className="text-slate-500">No camera configured — set VITE_CAMERA_SOURCE to your phone IP (e.g. http://192.168.1.33:8080/video)</span>;
+  }
+  if (offline) {
+    return <span className="text-slate-500">Camera Offline (Verify Backend at {API_URL})</span>;
+  }
+  return (
+    <img
+      src={`${API_URL}/api/stream/video?source=${encodeURIComponent(CAMERA_SOURCE)}`}
+      alt="Live AI Feed"
+      className="w-full h-full object-cover"
+      onError={() => setOffline(true)}
+    />
+  );
+};
 
 const Dashboard = () => (
   <div className="p-8">
@@ -14,18 +35,10 @@ const Dashboard = () => (
       <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <h2 className="font-semibold mb-2">Camera 1 (Main Hallway)</h2>
         <div className="bg-slate-900 rounded-lg overflow-hidden aspect-video flex items-center justify-center">
-          <img 
-            src="http://localhost:8000/api/stream/video?source=http://192.168.1.33:8080/video" 
-            alt="Live AI Feed" 
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.parentElement!.innerHTML = '<span class="text-slate-500">Camera Offline (Verify Backend)</span>';
-            }}
-          />
+          <CameraFeed />
         </div>
       </div>
-      
+
       {/* Placeholder for Alerts */}
       <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <h2 className="font-semibold mb-2 text-red-600">Recent Alerts</h2>

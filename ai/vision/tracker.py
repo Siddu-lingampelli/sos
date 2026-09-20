@@ -46,6 +46,7 @@ class PersonTracker:
         self.cfg = cfg
         self.history: dict[int, deque] = defaultdict(lambda: deque(maxlen=cfg.HISTORY_LEN))
         self.last_seen: dict[int, float] = {}
+        self._untracked_seq = -1  # unique temp IDs for detections without ByteTrack ID
 
     def process(self, frame: np.ndarray):
         t0 = time.time()
@@ -68,7 +69,12 @@ class PersonTracker:
                 try:
                     box = boxes[i].xyxy[0].cpu().numpy().tolist()
                     conf = float(boxes[i].conf[0].cpu().numpy())
-                    tid = int(ids[i]) if ids[i] is not None else -1
+                    if ids[i] is not None:
+                        tid = int(ids[i])
+                    else:
+                        # Unique temp ID per untracked detection — never share -1
+                        tid = self._untracked_seq
+                        self._untracked_seq -= 1
                     kp = kps.data[i].cpu().numpy().tolist() if kps is not None and len(kps.data) > i else []
                 except (IndexError, AttributeError):
                     continue
