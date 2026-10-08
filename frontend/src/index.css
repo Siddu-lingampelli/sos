@@ -99,6 +99,10 @@ body {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.25; }
 }
+@keyframes sos-flash {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.2; }
+}
 .rec-dot {
   animation: sos-blink 1.6s ease-in-out infinite;
 }

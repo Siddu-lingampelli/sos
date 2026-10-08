@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { AuthAPI, setToken } from "../lib/api";
+import { reconnectLiveSocket } from "../lib/liveSocket";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -19,7 +20,10 @@ export default function Login() {
     setBusy(true);
     AuthAPI.login(email, password)
       .then((tok) => {
+        // Memory-only bearer (httpOnly cookie set by the server alongside).
+        // The live socket reconnects at once so alerts use the new session.
         setToken(tok.access_token);
+        reconnectLiveSocket();
         navigate("/");
       })
       .catch((err) => {
@@ -88,7 +92,7 @@ export default function Login() {
           {busy ? "Checking…" : "Take the desk →"}
         </button>
         <p className="mt-3 text-center font-mono text-[11px] text-[#a8a08a]">
-          JWT stored locally · API calls attach it automatically.
+          Session cookie (httpOnly) · nothing readable by page scripts.
         </p>
       </form>
     </div>

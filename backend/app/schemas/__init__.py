@@ -1,5 +1,5 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
-from typing import Optional
+from pydantic import BaseModel, EmailStr, ConfigDict, Field
+from typing import Optional, Literal
 from datetime import datetime
 from ..models import RoleEnum, IncidentStatus
 
@@ -14,10 +14,10 @@ class TokenData(BaseModel):
 # User Schemas
 class UserBase(BaseModel):
     email: EmailStr
-    name: str
+    name: str = Field(min_length=1, max_length=120)
 
 class UserCreate(UserBase):
-    password: str
+    password: str = Field(min_length=8, max_length=128)
 
 class UserResponse(UserBase):
     id: int
@@ -29,13 +29,13 @@ class UserResponse(UserBase):
 # Login Schema
 class LoginRequest(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(min_length=1, max_length=128)
 
 # Location Schemas
 class LocationBase(BaseModel):
-    name: str
-    building: str
-    floor: str
+    name: str = Field(min_length=1, max_length=120)
+    building: str = Field(default="-", max_length=120)
+    floor: str = Field(default="-", max_length=60)
 
 class LocationCreate(LocationBase):
     pass
@@ -47,11 +47,11 @@ class LocationResponse(LocationBase):
 
 # Camera Schemas
 class CameraBase(BaseModel):
-    name: str
-    status: str = "active"
+    name: str = Field(min_length=1, max_length=120)
+    status: Literal["active", "offline", "online", "disabled"] = "active"
 
 class CameraCreate(CameraBase):
-    location_id: int
+    location_id: int = Field(gt=0)
 
 class CameraResponse(CameraBase):
     id: int
@@ -61,13 +61,19 @@ class CameraResponse(CameraBase):
 
 # Incident Schemas
 class IncidentBase(BaseModel):
-    event_type: str
-    confidence: float
+    event_type: str = Field(min_length=1, max_length=200)
+    confidence: float = Field(ge=0.0, le=1.0)
     status: IncidentStatus = IncidentStatus.OPEN
-    snapshot_path: Optional[str] = None
+    snapshot_path: Optional[str] = Field(default=None, max_length=500)
 
-class IncidentCreate(IncidentBase):
-    camera_id: int
+class IncidentCreate(BaseModel):
+    """Operator-filed incident. Only identity + type are client-controlled:
+    status is always OPEN and snapshot_path is server-assigned, so a client
+    can neither forge resolutions/scores nor plant a filesystem path that a
+    later DELETE would remove (stored path traversal)."""
+    camera_id: int = Field(gt=0)
+    event_type: str = Field(min_length=1, max_length=200)
+    confidence: float = Field(ge=0.0, le=1.0)
 
 class IncidentResponse(IncidentBase):
     id: int

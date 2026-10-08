@@ -19,7 +19,7 @@ class Visualizer:
         "RECOVERED": (255, 0, 0),
     }
 
-    def draw(self, frame: np.ndarray, persons: list, fps: float, latency: float) -> np.ndarray:
+    def draw(self, frame: np.ndarray, persons: list, fps: float, latency: float, draw_skeleton: bool = True) -> np.ndarray:
         """
         Draws bounding boxes, skeletons, and telemetry onto the frame.
         """
@@ -35,12 +35,27 @@ class Visualizer:
             except (KeyError, TypeError, ValueError):
                 continue
             state = person.get("fall_state", "NORMAL")
-            color = self.STATE_COLORS.get(state, (0, 0, 255))
+            # Also color by activity for better visual feedback
+            # Use fall state colors for falls, blue for walking, green for still
+            move_state = person.get("move_state", "still")
+            if state == "NORMAL" and move_state == "running":
+                color = (255, 0, 255)  # Magenta for running
+            elif state == "NORMAL" and move_state == "walking":
+                color = (255, 165, 0)  # Orange for walking
+            elif state == "NORMAL" and move_state == "still":
+                color = (0, 200, 0)  # Green for standing still
+            else:
+                color = self.STATE_COLORS.get(state, (0, 0, 255))
             cv2.rectangle(out_frame, (x1, y1), (x2, y2), color, 2)
             tid = person.get("track_id", -1)
             ang = person.get("angle")
             ang_txt = f"{ang:.0f}d" if ang is not None else "?"
-            cv2.putText(out_frame, f"ID{tid} {state} {ang_txt}", (x1, max(0, y1 - 8)),
+            ev = person.get("fall_evidence") or {}
+            score = ev.get("score")
+            score_txt = f" {score:.0f}%" if isinstance(score, (int, float)) else ""
+            # Display movement state
+            move_state = person.get("move_state", "still")
+            cv2.putText(out_frame, f"ID{tid} {state} {ang_txt}{score_txt} [{move_state.upper()}]", (x1, max(0, y1 - 8)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 2)
             # Level 5: observation / inactivity badge
             ist = person.get("inact_state", "IDLE")
@@ -60,34 +75,35 @@ class Visualizer:
                 cv2.putText(out_frame, f"E{esc:.0f} {est}", (x1, y2 + 38),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.55, ecol, 2)
             
-            # Keypoints & Skeleton
-            keypoints = person.get("keypoints", [])
-            if not keypoints:
-                continue
-
-            # Draw bones
-            for link in self.skeleton:
-                try:
-                    pt1 = keypoints[link[0]]
-                    pt2 = keypoints[link[1]]
-                    
-                    # Verify keypoints confidence > 0.5 if confidence exists
-                    conf1 = pt1[2] if len(pt1) > 2 else 1.0
-                    conf2 = pt2[2] if len(pt2) > 2 else 1.0
-                    
-                    if conf1 > 0.5 and conf2 > 0.5:
-                        cv2.line(out_frame, 
-                                 (int(pt1[0]), int(pt1[1])), 
-                                 (int(pt2[0]), int(pt2[1])), 
-                                 self.bone_colors, 2)
-                except IndexError:
+            # Keypoints & Skeleton - skip on non-inference frames for speed
+            if draw_skeleton:
+                keypoints = person.get("keypoints", [])
+                if not keypoints:
                     continue
-            
-            # Draw keypoints
-            for pt in keypoints:
-                conf = pt[2] if len(pt) > 2 else 1.0
-                if conf > 0.5:
-                    cv2.circle(out_frame, (int(pt[0]), int(pt[1])), 4, self.keypoint_colors, -1)
+
+                # Draw bones
+                for link in self.skeleton:
+                    try:
+                        pt1 = keypoints[link[0]]
+                        pt2 = keypoints[link[1]]
+
+                        # Verify keypoints confidence > 0.5 if confidence exists
+                        conf1 = pt1[2] if len(pt1) > 2 else 1.0
+                        conf2 = pt2[2] if len(pt2) > 2 else 1.0
+
+                        if conf1 > 0.5 and conf2 > 0.5:
+                            cv2.line(out_frame,
+                                     (int(pt1[0]), int(pt1[1])),
+                                     (int(pt2[0]), int(pt2[1])),
+                                     self.bone_colors, 2)
+                    except IndexError:
+                        continue
+
+                # Draw keypoints
+                for pt in keypoints:
+                    conf = pt[2] if len(pt) > 2 else 1.0
+                    if conf > 0.5:
+                        cv2.circle(out_frame, (int(pt[0]), int(pt[1])), 4, self.keypoint_colors, -1)
 
         # Draw UI Overlay (Telemetry)
         cv2.rectangle(out_frame, (0, 0), (w, 40), (0, 0, 0), -1)

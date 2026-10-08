@@ -31,6 +31,16 @@ Thumbs.db
 # Docker / DB
 postgres-data/
 pgdata/
+*.db
+*.sqlite
+*.sqlite3
+# SQLite WAL sidecars (see app/db/session.py — WAL is enabled so the
+# inference thread and HTTP handlers can read while one writes)
+*.db-shm
+*.db-wal
+# Note: any .db file anywhere in the repo is now ignored, including
+# backend/silentsos.db and root silentsos.db. Delete existing tracked copies
+# with: git rm --cached backend/silentsos.db silentsos.db && git commit -m ...
 
 # ML weights / media (large, local-only) — NOTE: must not match backend/app/models/
 *.pt

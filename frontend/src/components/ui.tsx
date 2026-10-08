@@ -67,6 +67,13 @@ export const IconCheck = () => (
   </Base>
 );
 
+export const IconPin = () => (
+  <Base>
+    <path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" />
+    <circle cx="12" cy="10" r="2.5" />
+  </Base>
+);
+
 /* ---- status + data display ---- */
 
 const STATUS_STYLE: Record<IncidentStatus, string> = {
@@ -87,13 +94,14 @@ export function StatusBadge({ status }: { status: IncidentStatus }) {
 }
 
 export function ConfidenceBar({ value }: { value: number }) {
-  const color = value >= 70 ? "bg-[#c81e1e]" : value >= 40 ? "bg-[#b45309]" : "bg-[#3f6212]";
+  const safe = Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 0;
+  const color = safe >= 70 ? "bg-[#c81e1e]" : safe >= 40 ? "bg-[#b45309]" : "bg-[#3f6212]";
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2" role="img" aria-label={`Confidence ${safe} percent`}>
       <div className="h-1 w-20 overflow-hidden rounded-full bg-[#e2ddd0]">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${value}%` }} />
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${safe}%` }} />
       </div>
-      <span className="font-mono text-xs font-semibold">{value}%</span>
+      <span className="font-mono text-xs font-semibold">{safe}%</span>
     </div>
   );
 }

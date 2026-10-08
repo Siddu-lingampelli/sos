@@ -51,16 +51,21 @@ class Incident(Base):
     __tablename__ = "incidents"
 
     id = Column(Integer, primary_key=True, index=True)
-    camera_id = Column(Integer, ForeignKey("cameras.id"))
+    camera_id = Column(Integer, ForeignKey("cameras.id"), index=True)
     event_type = Column(String) # e.g. "Fall + Inactivity"
     confidence = Column(Float)
-    timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    status = Column(Enum(IncidentStatus), default=IncidentStatus.OPEN)
+    timestamp = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+    status = Column(Enum(IncidentStatus), default=IncidentStatus.OPEN, index=True)
     snapshot_path = Column(String, nullable=True)
 
     camera = relationship("Camera", back_populates="incidents")
     events = relationship("DetectionEvent", back_populates="incident")
     alerts = relationship("Alert", back_populates="incident")
+
+    # Ensure incident status enum matches frontend expectations
+    @property
+    def status_value(self):
+        return self.status.value if isinstance(self.status, IncidentStatus) else self.status
 
 class DetectionEvent(Base):
     __tablename__ = "detection_events"

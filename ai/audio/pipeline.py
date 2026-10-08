@@ -24,6 +24,9 @@ class AudioPipeline:
         self.vad = vad or SileroVAD(cfg)
         self.transcriber = transcriber or Transcriber(cfg)
         self.classifier = classifier or DistressClassifier(cfg)
+        # Keywords default to the config tuple, but a caller can pass an
+        # override. The orchestrator (audio_service) keeps the value in sync
+        # with backend Settings.audio_keywords.
         self.keywords = tuple(keywords) if keywords else cfg.KEYWORDS
         self.events: deque[dict] = deque(maxlen=500)
         self._speech_buf: list[np.ndarray] = []

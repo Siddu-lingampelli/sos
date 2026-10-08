@@ -88,6 +88,18 @@ class InactivityMonitor:
                                         "t": now, "move": move, "elapsed": round(elapsed, 1)})
                     self.events.append({"type": "POSSIBLE_EMERGENCY", "track_id": tid,
                                         "t": now, "reason": "fall+prolonged-inactivity"})
+                elif fall_state in FALL_STATES:
+                    # The window expired with the fall state still open, so the
+                    # person is down but not perfectly still — twitching, or
+                    # trying and failing to move. A previous version reset to
+                    # IDLE here, which restarted a fresh window on the very
+                    # next frame: an endless OBSERVING loop that never
+                    # escalated. Being down and unable to get up is the
+                    # emergency, so escalate.
+                    self._finish(tid, "INACTIVE", "INACTIVITY_CONFIRMED", now,
+                                 extra={"move": move, "elapsed": round(elapsed, 1)})
+                    self.events.append({"type": "POSSIBLE_EMERGENCY", "track_id": tid,
+                                        "t": now, "reason": "fall+remained-down"})
                 else:
                     self._finish(tid, "IDLE", "OBSERVATION_TIMEOUT", now,
                                  extra={"move": move, "elapsed": round(elapsed, 1)})

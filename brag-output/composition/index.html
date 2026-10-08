@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { margin:0; width:1920px; height:1080px; overflow:hidden; background:#0E0C09; }
+  #root { width:100%; height:100%; position:relative; overflow:hidden; background:#0E0C09;
+    font-family:"Inter", system-ui, sans-serif; }
+  .clip { position:absolute; inset:0; width:1920px; height:1080px; overflow:hidden; }
+  .stage { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .display { font-family:"Space Grotesk", "Inter", system-ui, sans-serif; }
+  .mono { font-family:"IBM Plex Mono", ui-monospace, monospace; }
+  .kicker { font-family:"IBM Plex Mono", monospace; font-size:26px; letter-spacing:0.32em;
+    text-transform:uppercase; color:#a8a08a; }
+  .opsgrid { position:absolute; inset:0;
+    background-image:linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size:44px 44px; }
+  .glow { position:absolute; left:50%; top:50%; width:1400px; height:800px;
+    background:radial-gradient(ellipse at center, rgba(200,30,30,0.16) 0%, rgba(200,30,30,0.0) 65%); }
+  .vf { position:absolute; width:52px; height:52px; border:0 solid rgba(255,255,255,0.9); }
+  .card3d { transform-style:preserve-3d; }
+  .shell { perspective:1400px; }
+  audio { display:none; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="40" data-width="1920" data-height="1080">
+
+  <!-- ================= SCENE 1 : hook 0-4.5 ================= -->
+  <div class="clip" id="scene-1-hook" data-start="0" data-duration="4.5" data-track-index="0">
+    <div class="stage" id="s1-stage">
+      <div class="opsgrid" id="s1-grid"></div>
+      <div class="glow" id="s1-glow"></div>
+      <div id="s1-pulsewrap" style="width:900px; margin-bottom:56px;">
+        <div id="s1-pulse" style="height:6px; background:#c81e1e; border-radius:3px; box-shadow:0 0 32px rgba(200,30,30,0.9); transform-origin:left center;"></div>
+      </div>
+      <div class="mono" id="s1-kick" style="font-size:28px; letter-spacing:0.34em; color:#a8a08a; margin-bottom:34px;">HOSTEL&nbsp;&nbsp;/&nbsp;&nbsp;CAMPUS&nbsp;&nbsp;—&nbsp;&nbsp;02:14&nbsp;AM</div>
+      <div class="display" style="font-size:96px; font-weight:700; color:#f4f2ec; letter-spacing:-0.02em; line-height:1.08; text-align:center;">
+        <span class="s1w" style="display:inline-block;">The&nbsp;</span>
+        <span class="s1w" style="display:inline-block;">most&nbsp;</span>
+        <span class="s1w" style="display:inline-block;">dangerous&nbsp;</span>
+        <span class="s1w" style="display:inline-block;">emergency&nbsp;</span><br/>
+        <span class="s1w" style="display:inline-block;">is&nbsp;</span>
+        <span class="s1w" style="display:inline-block;">a&nbsp;</span>
+        <span class="s1w" style="display:inline-block; color:#ff6b6b;">silent&nbsp;</span>
+        <span class="s1w" style="display:inline-block; color:#ff6b6b;">one.</span>
+      </div>
+      <div class="mono" id="s1-brand" style="margin-top:44px; font-size:30px; letter-spacing:0.42em; color:#f4f2ec;">SILENT<span style="color:#c81e1e;">SOS</span></div>
+    </div>
+  </div>
+
+  <!-- ================= SCENE 2 : problem 4.5-9 ================= -->
+  <div class="clip" id="scene-2-problem" data-start="4.5" data-duration="4.5" data-track-index="1">
+    <div class="stage" id="s2-stage">
+      <div class="opsgrid" id="s2-grid" style="opacity:0.6;"></div>
+      <div class="kicker" id="s2-kick" style="margin-bottom:40px;">WHY&nbsp;IT&nbsp;MATTERS</div>
+      <div class="shell" style="display:flex; gap:48px;">
+        <div class="card3d s2card" style="width:640px; background:#171310; border:1px solid #3a332a; border-radius:20px; padding:56px 60px;">
+          <div class="mono" style="font-size:24px; letter-spacing:0.28em; color:#f59e0b; margin-bottom:22px;">FALL&nbsp;+&nbsp;NO&nbsp;MOVEMENT</div>
+          <div class="display" style="font-size:64px; font-weight:700; color:#f4f2ec; line-height:1.05;">Nobody<br/>sees it.</div>
+        </div>
+        <div class="card3d s2card" style="width:640px; background:#1d0f0f; border:1px solid #c81e1e; border-radius:20px; padding:56px 60px;">
+          <div class="mono" style="font-size:24px; letter-spacing:0.28em; color:#ff6b6b; margin-bottom:22px;">NO&nbsp;ONE&nbsp;CALLS&nbsp;FOR&nbsp;HELP</div>
+          <div class="display" style="font-size:64px; font-weight:700; color:#f4f2ec; line-height:1.05;">Nobody<br/>hears it.</div>
+        </div>
+      </div>
+      <div id="s2-rows" class="mono" style="margin-top:44px; font-size:27px; color:#d8d2c2; display:flex; gap:56px;">
+        <span class="s2r">Walking → no alert</span>
+        <span class="s2r" style="color:#57534a;">·</span>
+        <span class="s2r">Sitting → no alert</span>
+        <span class="s2r" style="color:#57534a;">·</span>
+        <span class="s2r" style="color:#ff6b6b;">Fall + stillness → alert</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SCENE 3 : pipeline 9-14 ================= -->
+  <div class="clip" id="scene-3-pipeline" data-start="9" data-duration="5" data-track-index="2">
+    <div class="stage" id="s3-stage">
+      <div class="opsgrid" id="s3-grid" style="opacity:0.5;"></div>
+      <div class="glow" id="s3-glow"></div>
+      <div class="kicker" id="s3-kick" style="margin-bottom:56px;">ONE&nbsp;PIPELINE&nbsp;·&nbsp;END&nbsp;TO&nbsp;END</div>
+      <div class="shell" style="display:flex; align-items:center; gap:0;">
+        <div class="card3d s3node" style="width:330px; background:rgba(23,19,16,0.92); border:1px solid #4a4438; border-radius:18px; padding:38px 30px; text-align:center;">
+          <div class="mono" style="font-size:22px; letter-spacing:0.26em; color:#a8a08a;">01&nbsp;CAPTURE</div>
+          <div class="display" style="font-size:40px; font-weight:700; color:#f4f2ec; margin-top:12px;">Camera<br/>+ Mic</div>
+        </div>
+        <div class="s3link" style="width:90px; height:3px; background:#4a4438;"></div>
+        <div class="card3d s3node" style="width:330px; background:rgba(23,19,16,0.92); border:1px solid #4a4438; border-radius:18px; padding:38px 30px; text-align:center;">
+          <div class="mono" style="font-size:22px; letter-spacing:0.26em; color:#a8a08a;">02&nbsp;DETECT</div>
+          <div class="display" style="font-size:40px; font-weight:700; color:#f4f2ec; margin-top:12px;">AI Pose<br/>+ Audio</div>
+        </div>
+        <div class="s3link" style="width:90px; height:3px; background:#4a4438;"></div>
+        <div class="card3d s3node" style="width:330px; background:rgba(29,15,15,0.94); border:1px solid #c81e1e; border-radius:18px; padding:38px 30px; text-align:center;">
+          <div class="mono" style="font-size:22px; letter-spacing:0.26em; color:#ff6b6b;">03&nbsp;VERIFY</div>
+          <div class="display" style="font-size:40px; font-weight:700; color:#f4f2ec; margin-top:12px;">Time +<br/>Confidence</div>
+        </div>
+        <div class="s3link" style="width:90px; height:3px; background:#4a4438;"></div>
+        <div class="card3d s3node" style="width:330px; background:rgba(20,26,14,0.94); border:1px solid #3f6212; border-radius:18px; padding:38px 30px; text-align:center;">
+          <div class="mono" style="font-size:22px; letter-spacing:0.26em; color:#7fb069;">04&nbsp;ALERT</div>
+          <div class="display" style="font-size:40px; font-weight:700; color:#f4f2ec; margin-top:12px;">Human<br/>Verifies</div>
+        </div>
+      </div>
+      <div id="s3-beam" style="margin-top:52px; width:1200px; height:6px; background:#c81e1e; border-radius:3px; box-shadow:0 0 28px rgba(200,30,30,0.85); transform-origin:left center;"></div>
+    </div>
+  </div>
+
+  <!-- ================= SCENE 4 : vision 14-19.5 ================= -->
+  <div class="clip" id="scene-4-vision" data-start="14" data-duration="5.5" data-track-index="3">
+    <div class="stage" id="s4-stage">
+      <div class="kicker" id="s4-kick" style="margin-bottom:36px;">VISION&nbsp;·&nbsp;YOLO11n-POSE&nbsp;·&nbsp;BYTETRACK&nbsp;·&nbsp;FALL&nbsp;STATE&nbsp;MACHINE</div>
+      <div class="shell">
+        <div class="card3d" id="s4-vf" style="position:relative; width:1240px; height:620px; background:#0b0a08; border:1px solid #3a332a; border-radius:20px; overflow:hidden;">
+          <div class="opsgrid" style="opacity:0.8;"></div>
+          <div class="vf" style="left:26px; top:26px; border-width:4px 0 0 4px;"></div>
+          <div class="vf" style="right:26px; top:26px; border-width:4px 4px 0 0;"></div>
+          <div class="vf" style="left:26px; bottom:26px; border-width:0 0 4px 4px;"></div>
+          <div class="vf" style="right:26px; bottom:26px; border-width:0 4px 4px 0;"></div>
+          <div class="mono" style="position:absolute; left:40px; top:34px; font-size:24px; letter-spacing:0.24em; color:#f4f2ec;">CAM&nbsp;01&nbsp;&nbsp;<span style="color:#c81e1e;">●</span>&nbsp;REC</div>
+          <div class="mono" id="s4-tag" style="position:absolute; right:44px; top:96px; font-size:26px; letter-spacing:0.14em; color:#0E0C09; background:#7fb069; padding:10px 22px; border-radius:10px; font-weight:600;">ID&nbsp;03&nbsp;·&nbsp;TRACKING</div>
+          <svg id="s4-fig" width="420" height="460" viewBox="0 0 420 460" style="position:absolute; left:400px; top:80px;">
+            <g stroke="#f4f2ec" stroke-width="7" stroke-linecap="round" fill="none">
+              <line x1="210" y1="120" x2="210" y2="260"/>
+              <line x1="210" y1="160" x2="120" y2="220"/>
+              <line x1="210" y1="160" x2="300" y2="220"/>
+              <line x1="210" y1="260" x2="150" y2="380"/>
+              <line x1="210" y1="260" x2="270" y2="380"/>
+            </g>
+            <g fill="#c81e1e">
+              <circle cx="210" cy="80" r="26"/>
+              <circle cx="210" cy="120" r="10"/><circle cx="210" cy="160" r="10"/>
+              <circle cx="120" cy="220" r="10"/><circle cx="300" cy="220" r="10"/>
+              <circle cx="210" cy="260" r="10"/><circle cx="150" cy="380" r="10"/><circle cx="270" cy="380" r="10"/>
+            </g>
+            <rect x="100" y="40" width="220" height="380" fill="none" stroke="#7fb069" stroke-width="3" stroke-dasharray="14 10" rx="12"/>
+          </svg>
+          <div class="mono" id="s4-status" style="position:absolute; left:44px; bottom:100px; font-size:30px; letter-spacing:0.2em; color:#7fb069; font-weight:600;">TRACKING</div>
+          <div class="mono" style="position:absolute; left:44px; bottom:40px; font-size:24px; color:#a8a08a; display:flex; gap:36px;">
+            <span><span style="display:inline-block; width:18px; height:18px; background:#16a34a; border-radius:4px; margin-right:10px;"></span>TRACKING</span>
+            <span><span style="display:inline-block; width:18px; height:18px; background:#f59e0b; border-radius:4px; margin-right:10px;"></span>POSSIBLE FALL</span>
+            <span><span style="display:inline-block; width:18px; height:18px; background:#c81e1e; border-radius:4px; margin-right:10px;"></span>EMERGENCY</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SCENE 5 : time+sound 19.5-25 ================= -->
+  <div class="clip" id="scene-5-verify" data-start="19.5" data-duration="5.5" data-track-index="4">
+    <div class="stage" id="s5-stage">
+      <div class="opsgrid" style="opacity:0.45;"></div>
+      <div class="kicker" id="s5-kick" style="margin-bottom:40px;">VERIFIED&nbsp;OVER&nbsp;AN&nbsp;OBSERVATION&nbsp;WINDOW&nbsp;·&nbsp;NEVER&nbsp;A&nbsp;SINGLE&nbsp;FRAME</div>
+      <div class="shell" style="display:flex; gap:26px;">
+        <div class="card3d s5card mono" style="padding:26px 38px; border-radius:14px; font-size:30px; letter-spacing:0.12em; background:#171310; border:1px solid #4a4438; color:#a8a08a;">NORMAL</div>
+        <div class="card3d s5card mono" style="padding:26px 38px; border-radius:14px; font-size:30px; letter-spacing:0.12em; background:#171310; border:1px solid #f59e0b; color:#f59e0b;">POSSIBLE_FALL</div>
+        <div class="card3d s5card mono" style="padding:26px 38px; border-radius:14px; font-size:30px; letter-spacing:0.12em; background:#171310; border:1px solid #f59e0b; color:#f4f2ec;">OBSERVING</div>
+        <div class="card3d s5card mono" style="padding:26px 38px; border-radius:14px; font-size:30px; letter-spacing:0.12em; background:#171310; border:1px solid #f59e0b; color:#f4f2ec;">INACTIVE</div>
+        <div class="card3d s5card mono" id="s5-final" style="padding:26px 38px; border-radius:14px; font-size:30px; letter-spacing:0.12em; background:#2a0e0e; border:2px solid #c81e1e; color:#fff; font-weight:600; box-shadow:0 0 44px rgba(200,30,30,0.55);">POSSIBLE_EMERGENCY</div>
+      </div>
+      <div id="s5-audio" style="margin-top:56px; width:1240px; background:#100e0b; border:1px solid #3a332a; border-radius:16px; padding:30px 44px; display:flex; align-items:center; gap:36px;">
+        <div class="mono" style="font-size:24px; letter-spacing:0.22em; color:#a8a08a; white-space:nowrap;">VAD&nbsp;·&nbsp;WHISPER&nbsp;·&nbsp;<span style="color:#ff6b6b;">“HELP”</span>&nbsp;·&nbsp;SCREAM</div>
+        <div id="s5-bars" style="display:flex; align-items:flex-end; gap:10px; height:90px; flex:1;">
+          <div class="s5b" style="width:22px; height:30px; background:#4a4438; border-radius:5px;"></div>
+          <div class="s5b" style="width:22px; height:52px; background:#4a4438; border-radius:5px;"></div>
+          <div class="s5b" style="width:22px; height:40px; background:#4a4438; border-radius:5px;"></div>
+          <div class="s5b" style="width:22px; height:66px; background:#c81e1e; border-radius:5px;"></div>
+          <div class="s5b" style="width:22px; height:84px; background:#c81e1e; border-radius:5px;"></div>
+          <div class="s5b" style="width:22px; height:58px; background:#c81e1e; border-radius:5px;"></div>
+          <div class="s5b" style="width:22px; height:36px; background:#4a4438; border-radius:5px;"></div>
+          <div class="s5b" style="width:22px; height:48px; background:#4a4438; border-radius:5px;"></div>
+          <div class="s5b" style="width:22px; height:70px; background:#c81e1e; border-radius:5px;"></div>
+          <div class="s5b" style="width:22px; height:44px; background:#4a4438; border-radius:5px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SCENE 6 : engine 25-30.5 ================= -->
+  <div class="clip" id="scene-6-engine" data-start="25" data-duration="5.5" data-track-index="5">
+    <div class="stage" id="s6-stage">
+      <div class="glow" id="s6-glow"></div>
+      <div class="kicker" id="s6-kick" style="margin-bottom:36px;">EMERGENCY&nbsp;CONFIDENCE&nbsp;ENGINE&nbsp;·&nbsp;0–100</div>
+      <div style="display:flex; gap:60px; align-items:center;">
+        <div class="shell">
+          <div class="card3d" id="s6-gauge" style="width:460px; height:460px; border-radius:50%; background:#141110; border:10px solid #2a251e; display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 0 80px rgba(200,30,30,0.35);">
+            <div class="display" id="s6-num" style="font-size:150px; font-weight:700; color:#f4f2ec; line-height:1;">0</div>
+            <div class="mono" style="font-size:26px; letter-spacing:0.3em; color:#a8a08a; margin-top:8px;">CONFIDENCE</div>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:22px; width:640px;">
+          <div class="s6row mono" style="font-size:29px; color:#f4f2ec; background:#171310; border:1px solid #4a4438; border-radius:12px; padding:20px 30px;">FALL <span style="float:right; color:#ff6b6b;">STRONG +45</span></div>
+          <div class="s6row mono" style="font-size:29px; color:#f4f2ec; background:#171310; border:1px solid #4a4438; border-radius:12px; padding:20px 30px;">INACTIVITY <span style="float:right; color:#f59e0b;">SUPPORT +22</span></div>
+          <div class="s6row mono" style="font-size:29px; color:#f4f2ec; background:#171310; border:1px solid #4a4438; border-radius:12px; padding:20px 30px;">DISTRESS “HELP” <span style="float:right; color:#f59e0b;">SUPPORT +20</span></div>
+          <div class="s6row mono" style="font-size:29px; color:#7fb069; background:#141a10; border:1px solid #3f6212; border-radius:12px; padding:20px 30px;">RECOVERY <span style="float:right;">CLEARS −60</span></div>
+        </div>
+      </div>
+      <div class="shell" style="margin-top:36px;">
+        <div class="card3d" id="s6-alert" style="background:#c81e1e; border-radius:16px; padding:26px 60px; display:flex; gap:56px; align-items:center; box-shadow:0 18px 70px rgba(200,30,30,0.5);">
+          <div class="mono" style="font-size:30px; letter-spacing:0.2em; color:#fff; font-weight:600;">POSSIBLE&nbsp;EMERGENCY</div>
+          <div class="mono" style="font-size:26px; color:#ffd9d9;">B-BLOCK · FALL+STILLNESS · <span id="s6-pct" style="font-weight:600; color:#fff;">87%</span> · 02:14 · CAM 01</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SCENE 7 : human verifies 30.5-35.5 ================= -->
+  <div class="clip" id="scene-7-human" data-start="30.5" data-duration="5" data-track-index="6">
+    <div class="stage" id="s7-stage">
+      <div class="kicker" id="s7-kick" style="margin-bottom:36px;">WEBSOCKET&nbsp;·&nbsp;NO&nbsp;REFRESH&nbsp;·&nbsp;HUMAN&nbsp;DECIDES</div>
+      <div class="shell">
+        <div class="card3d" id="s7-dash" style="width:1320px; background:#f4f2ec; border-radius:20px; padding:40px 44px; display:flex; gap:36px;">
+          <div style="flex:1.2; background:#0b0a08; border-radius:14px; padding:26px; position:relative; min-height:420px;">
+            <div class="mono" style="font-size:22px; letter-spacing:0.22em; color:#a8a08a;">LIVE&nbsp;FEED&nbsp;·&nbsp;CAM&nbsp;01&nbsp;&nbsp;<span style="color:#7fb069;">● LIVE</span></div>
+            <div class="vf" style="left:18px; top:64px; border-width:3px 0 0 3px; width:36px; height:36px;"></div>
+            <div class="vf" style="right:18px; top:64px; border-width:3px 3px 0 0; width:36px; height:36px;"></div>
+            <div class="vf" style="left:18px; bottom:18px; border-width:0 0 3px 3px; width:36px; height:36px;"></div>
+            <div class="vf" style="right:18px; bottom:18px; border-width:0 3px 3px 0; width:36px; height:36px;"></div>
+            <div class="mono" style="margin-top:120px; font-size:26px; color:#f4f2ec; background:#c81e1e; display:inline-block; padding:12px 26px; border-radius:10px; letter-spacing:0.14em;">#1041 · FALL + STILLNESS · 87%</div>
+            <div class="mono" id="s7-log" style="margin-top:26px; font-size:23px; color:#7fb069;">▸ 02:14:09&nbsp;&nbsp;VERIFIED by operator · incident preserved</div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column; gap:20px;">
+            <div class="mono" style="font-size:22px; letter-spacing:0.24em; color:#57534a;">ALERT&nbsp;QUEUE</div>
+            <div id="s7-badge" class="mono" style="font-size:30px; font-weight:600; letter-spacing:0.12em; color:#fff; background:#c81e1e; border-radius:12px; padding:22px 28px; text-align:center;">OPEN — AWAITING REVIEW</div>
+            <div style="display:flex; gap:18px;">
+              <div id="s7-verify" class="mono" style="flex:1; font-size:30px; font-weight:600; text-align:center; color:#fff; background:#16130e; border-radius:12px; padding:24px;">VERIFY</div>
+              <div class="mono" style="flex:1; font-size:30px; text-align:center; color:#57534a; background:#e2ddd0; border-radius:12px; padding:24px;">DISMISS</div>
+            </div>
+            <div class="mono" style="font-size:22px; color:#57534a;">FastAPI → PostgreSQL + WebSocket → React</div>
+          </div>
+        </div>
+      </div>
+      <div id="s7-cursor" style="position:absolute; left:1290px; top:640px; width:34px; height:34px; border-radius:50%; border:5px solid #c81e1e; background:rgba(200,30,30,0.25); box-shadow:0 0 24px rgba(200,30,30,0.8);"></div>
+    </div>
+  </div>
+
+  <!-- ================= SCENE 8 : outro 35.5-40 ================= -->
+  <div class="clip" id="scene-8-outro" data-start="35.5" data-duration="4.5" data-track-index="7" style="background:#f4f2ec;">
+    <div class="stage" id="s8-stage" style="background:#f4f2ec;">
+      <div class="mono" id="s8-kick" style="font-size:26px; letter-spacing:0.4em; color:#57534a; margin-bottom:36px;">SILENT&nbsp;EMERGENCY&nbsp;·&nbsp;ANSWERED</div>
+      <div class="display" id="s8-word" style="font-size:170px; font-weight:700; letter-spacing:-0.03em; color:#16130e; line-height:1;">Silent<span style="color:#c81e1e;">SOS</span></div>
+      <div id="s8-rule" style="margin-top:30px; width:560px; height:8px; background:#c81e1e; border-radius:4px; transform-origin:center;"></div>
+      <div class="display" id="s8-line" style="margin-top:34px; font-size:44px; font-weight:500; color:#16130e;">Possible emergency — human verification required.</div>
+      <div class="mono" id="s8-sub" style="margin-top:22px; font-size:26px; letter-spacing:0.24em; color:#57534a;">LOCAL-FIRST&nbsp;·&nbsp;NO&nbsp;PAID&nbsp;AI&nbsp;APIs&nbsp;·&nbsp;FASTAPI&nbsp;+&nbsp;REACT&nbsp;+&nbsp;POSTGRES</div>
+    </div>
+  </div>
+
+  <!-- ================= AUDIO ================= -->
+  <audio id="bg-music" data-start="0.6" data-duration="39.4" data-track-index="10" data-volume="0.22" src="assets/music/happy-beats-business-moves-vol-12-by-ende-dot-app.mp3"></audio>
+  <audio id="vo-main" data-start="1.2" data-duration="24.7" data-track-index="3" data-volume="1" src="assets/voiceover.wav"></audio>
+  <audio id="vo-outro" data-start="35.8" data-duration="3.8" data-track-index="3" data-volume="1" src="assets/voiceover-outro.wav"></audio>
+  <audio id="sfx-k1" data-start="0.5" data-duration="1" data-track-index="11" data-volume="0.5" src="assets/sfx/keyboard/keypress-004.wav"></audio>
+  <audio id="sfx-k2" data-start="0.9" data-duration="1" data-track-index="12" data-volume="0.5" src="assets/sfx/keyboard/keypress-011.wav"></audio>
+  <audio id="sfx-drop1" data-start="1.2" data-duration="1" data-track-index="13" data-volume="0.6" src="assets/sfx/interface/drop_001.ogg"></audio>
+  <audio id="sfx-c1" data-start="4.7" data-duration="1" data-track-index="11" data-volume="0.7" src="assets/sfx/casino/card-place-1.ogg"></audio>
+  <audio id="sfx-c2" data-start="5.3" data-duration="1" data-track-index="12" data-volume="0.7" src="assets/sfx/casino/card-slide-1.ogg"></audio>
+  <audio id="sfx-n1" data-start="9.3" data-duration="1" data-track-index="11" data-volume="0.5" src="assets/sfx/interface/drop_002.ogg"></audio>
+  <audio id="sfx-n2" data-start="10.4" data-duration="1" data-track-index="12" data-volume="0.5" src="assets/sfx/interface/drop_001.ogg"></audio>
+  <audio id="sfx-n3" data-start="11.5" data-duration="1" data-track-index="13" data-volume="0.5" src="assets/sfx/interface/drop_002.ogg"></audio>
+  <audio id="sfx-n4" data-start="12.5" data-duration="1" data-track-index="14" data-volume="0.5" src="assets/sfx/interface/drop_001.ogg"></audio>
+  <audio id="sfx-beam" data-start="12.6" data-duration="2" data-track-index="15" data-volume="0.6" src="assets/sfx/interface/bong_001.ogg"></audio>
+  <audio id="sfx-lock" data-start="14.6" data-duration="1" data-track-index="11" data-volume="0.6" src="assets/sfx/interface/select_008.ogg"></audio>
+  <audio id="sfx-flip" data-start="16.5" data-duration="1" data-track-index="12" data-volume="0.7" src="assets/sfx/ui/mouseclick1.ogg"></audio>
+  <audio id="sfx-s5a" data-start="19.7" data-duration="1" data-track-index="11" data-volume="0.6" src="assets/sfx/casino/card-place-1.ogg"></audio>
+  <audio id="sfx-s5b" data-start="21.3" data-duration="1" data-track-index="12" data-volume="0.6" src="assets/sfx/interface/drop_001.ogg"></audio>
+  <!-- beat-locked: final state card at 22.5s (≈22.37 strong cue +0.13) -->
+  <audio id="sfx-pay1" data-start="22.5" data-duration="2" data-track-index="13" data-volume="0.75" src="assets/sfx/impact/impactBell_heavy_000.ogg"></audio>
+  <audio id="sfx-t1" data-start="26.2" data-duration="1" data-track-index="11" data-volume="0.4" src="assets/sfx/keyboard/keypress-019.wav"></audio>
+  <audio id="sfx-t2" data-start="27.2" data-duration="1" data-track-index="12" data-volume="0.4" src="assets/sfx/keyboard/keypress-004.wav"></audio>
+  <audio id="sfx-pay2" data-start="28.6" data-duration="2" data-track-index="13" data-volume="0.8" src="assets/sfx/impact/impactBell_heavy_000.ogg"></audio>
+  <audio id="sfx-click" data-start="33.2" data-duration="1" data-track-index="11" data-volume="0.8" src="assets/sfx/ui/mouseclick1.ogg"></audio>
+  <audio id="sfx-ok" data-start="33.4" data-duration="2" data-track-index="12" data-volume="0.7" src="assets/sfx/impact/impactBell_heavy_003.ogg"></audio>
+  <audio id="sfx-final" data-start="36.2" data-duration="2.5" data-track-index="11" data-volume="0.7" src="assets/sfx/impact/impactBell_heavy_003.ogg"></audio>
+
+</div>
+<script>
+(function(){
+  var tl = gsap.timeline({ paused:true });
+
+  /* ---------- SCENE 1 (0-4.5) : push-in + pulse + words ---------- */
+  tl.fromTo("#s1-stage", {scale:1.045}, {scale:1.0, duration:4.5, ease:"none"}, 0);
+  tl.fromTo("#s1-pulse", {scaleX:0}, {scaleX:1, duration:1.0, ease:"power2.out"}, 0.2);
+  tl.fromTo("#s1-kick", {opacity:0, y:18}, {opacity:1, y:0, duration:0.6, ease:"power2.out"}, 0.5);
+  tl.fromTo(".s1w", {opacity:0, y:44}, {opacity:1, y:0, duration:0.55, stagger:0.14, ease:"power3.out"}, 1.2);
+  tl.fromTo("#s1-brand", {opacity:0, y:16}, {opacity:1, y:0, duration:0.6, ease:"power2.out"}, 3.0);
+  tl.fromTo("#s1-glow", {opacity:0.4}, {opacity:1, duration:2.0, ease:"sine.inOut"}, 0.5);
+  tl.to("#s1-stage", {opacity:0, duration:0.4, ease:"power1.in"}, 4.1);
+
+  /* ---------- SCENE 2 (4.5-9) ---------- */
+  tl.fromTo("#s2-stage", {opacity:0}, {opacity:1, duration:0.35, ease:"power1.out"}, 4.5);
+  tl.fromTo("#s2-kick", {opacity:0, y:16}, {opacity:1, y:0, duration:0.5, ease:"power2.out"}, 4.6);
+  // beat-grid: card 1 at 4.75s, card 2 at 5.35s
+  tl.fromTo(".s2card", {opacity:0, y:70, rotationX:-14, transformPerspective:1200}, {opacity:1, y:0, rotationX:0, duration:0.7, stagger:0.6, ease:"power3.out"}, 4.75);
+  tl.fromTo(".s2r", {opacity:0, y:18}, {opacity:1, y:0, duration:0.45, stagger:0.18, ease:"power2.out"}, 5.9);
+  tl.to("#s2-stage", {opacity:0, duration:0.4, ease:"power1.in"}, 8.6);
+
+  /* ---------- SCENE 3 (9-14) : nodes on every-other beat ---------- */
+  tl.fromTo("#s3-stage", {opacity:0}, {opacity:1, duration:0.35, ease:"power1.out"}, 9.0);
+  tl.fromTo("#s3-kick", {opacity:0, y:16}, {opacity:1, y:0, duration:0.5, ease:"power2.out"}, 9.1);
+  // beat-grid: nodes at 9.29, 10.37, 11.46, 12.55 (vol-12 grid ±0.10)
+  tl.fromTo(".s3node", {opacity:0, y:80, rotationY:22, transformPerspective:1400}, {opacity:1, y:0, rotationY:0, duration:0.6, ease:"power3.out", stagger:{each:0.55}}, 9.29);
+  tl.fromTo(".s3link", {opacity:0, scaleX:0}, {opacity:1, scaleX:1, duration:0.4, stagger:0.55, ease:"power2.out"}, 9.7);
+  // beam fires toward 10.93 strong cue family; completes 12.6-13.4
+  tl.fromTo("#s3-beam", {scaleX:0}, {scaleX:1, duration:0.8, ease:"power3.inOut"}, 12.6);
+  tl.fromTo("#s3-glow", {opacity:0.3}, {opacity:0.9, duration:1.2, ease:"sine.inOut"}, 11.5);
+  tl.to("#s3-stage", {opacity:0, x:-60, duration:0.4, ease:"power2.in"}, 13.6);
+
+  /* ---------- SCENE 4 (14-19.5) ---------- */
+  tl.fromTo("#s4-stage", {opacity:0, x:60}, {opacity:1, x:0, duration:0.4, ease:"power2.out"}, 14.0);
+  tl.fromTo("#s4-kick", {opacity:0, y:16}, {opacity:1, y:0, duration:0.5, ease:"power2.out"}, 14.1);
+  tl.fromTo("#s4-vf", {opacity:0, y:60, rotationX:8, transformPerspective:1400}, {opacity:1, y:0, rotationX:0, duration:0.7, ease:"power3.out"}, 14.2);
+  tl.fromTo("#s4-fig", {opacity:0, scale:0.92, transformOrigin:"50% 50%"}, {opacity:1, scale:1, duration:0.7, ease:"power2.out"}, 14.6);
+  tl.fromTo("#s4-tag", {opacity:0, x:30}, {opacity:1, x:0, duration:0.5, ease:"power2.out"}, 15.2);
+  tl.fromTo("#s4-status", {opacity:0}, {opacity:1, duration:0.4}, 15.4);
+  tl.to("#s4-status", {color:"#f59e0b", duration:0.3}, 16.5);
+  tl.fromTo("#s4-tag", {backgroundColor:"#7fb069"}, {backgroundColor:"#f59e0b", duration:0.3, immediateRender:false}, 16.5);
+  tl.to("#s4-stage", {opacity:0, duration:0.4, ease:"power1.in"}, 19.1);
+
+  /* ---------- SCENE 5 (19.5-25) ---------- */
+  tl.fromTo("#s5-stage", {opacity:0}, {opacity:1, duration:0.35, ease:"power1.out"}, 19.5);
+  tl.fromTo("#s5-kick", {opacity:0, y:16}, {opacity:1, y:0, duration:0.5, ease:"power2.out"}, 19.6);
+  // beat-grid: cards at 19.7, 20.5, 21.3, 22.1, 22.5(final beat-locked ≈22.37+0.13)
+  tl.fromTo(".s5card", {opacity:0, y:50, rotationX:-16, transformPerspective:1200}, {opacity:1, y:0, rotationX:0, duration:0.5, ease:"power3.out", stagger:{each:0.42}}, 19.7);
+  tl.fromTo("#s5-audio", {opacity:0, y:40}, {opacity:1, y:0, duration:0.6, ease:"power2.out"}, 23.0);
+  tl.fromTo(".s5b", {scaleY:0.2, transformOrigin:"50% 100%"}, {scaleY:1, duration:0.5, stagger:0.07, ease:"power2.out"}, 23.1);
+  tl.to("#s5-stage", {opacity:0, duration:0.4, ease:"power1.in"}, 24.6);
+
+  /* ---------- SCENE 6 (25-30.5) ---------- */
+  tl.fromTo("#s6-stage", {opacity:0, scale:0.97}, {opacity:1, scale:1, duration:0.45, ease:"power2.out"}, 25.0);
+  tl.fromTo("#s6-kick", {opacity:0, y:16}, {opacity:1, y:0, duration:0.5, ease:"power2.out"}, 25.1);
+  tl.fromTo("#s6-gauge", {opacity:0, rotationY:-18, transformPerspective:1200}, {opacity:1, rotationY:0, duration:0.7, ease:"power3.out"}, 25.2);
+  tl.fromTo(".s6row", {opacity:0, x:60}, {opacity:1, x:0, duration:0.5, stagger:0.28, ease:"power2.out"}, 25.4);
+  var cnt = {v:0};
+  var num = document.getElementById("s6-num");
+  tl.to(cnt, {v:87, duration:2.4, ease:"power2.inOut", onUpdate:function(){ num.textContent = String(Math.round(cnt.v)); }}, 26.0);
+  tl.fromTo("#s6-alert", {opacity:0, y:70, rotationX:-16, transformPerspective:1200}, {opacity:1, y:0, rotationX:0, duration:0.6, ease:"power3.out"}, 28.6);
+  tl.fromTo("#s6-glow", {opacity:0.3}, {opacity:1, duration:1.4, ease:"sine.inOut"}, 27.0);
+  tl.to("#s6-stage", {opacity:0, scale:1.03, duration:0.4, ease:"power2.in"}, 30.1);
+
+  /* ---------- SCENE 7 (30.5-35.5) : cursor click ---------- */
+  tl.fromTo("#s7-stage", {opacity:0}, {opacity:1, duration:0.35, ease:"power1.out"}, 30.5);
+  tl.fromTo("#s7-kick", {opacity:0, y:16}, {opacity:1, y:0, duration:0.5, ease:"power2.out"}, 30.6);
+  tl.fromTo("#s7-dash", {opacity:0, y:60, rotationX:7, transformPerspective:1400}, {opacity:1, y:0, rotationX:0, duration:0.7, ease:"power3.out"}, 30.7);
+  tl.fromTo("#s7-cursor", {opacity:0}, {opacity:1, duration:0.3}, 31.6);
+  tl.fromTo("#s7-cursor", {x:0, y:0}, {x:-100, y:50, duration:1.4, ease:"power2.inOut", immediateRender:false}, 31.8);
+  tl.to("#s7-verify", {scale:0.94, transformOrigin:"50% 50%", duration:0.12, ease:"power2.in"}, 33.2);
+  tl.to("#s7-verify", {scale:1.0, duration:0.18, ease:"power2.out"}, 33.32);
+  tl.to("#s7-badge", {backgroundColor:"#3f6212", duration:0.4}, 33.4);
+  tl.fromTo("#s7-log", {opacity:0, y:14}, {opacity:1, y:0, duration:0.5, ease:"power2.out"}, 33.8);
+  tl.to("#s7-cursor", {opacity:0, duration:0.3}, 34.6);
+  tl.to("#s7-stage", {opacity:0, duration:0.4, ease:"power1.in"}, 35.1);
+
+  /* ---------- SCENE 8 (35.5-40) : paper outro ---------- */
+  tl.fromTo("#s8-stage", {opacity:0}, {opacity:1, duration:0.45, ease:"power1.out"}, 35.5);
+  tl.fromTo("#s8-kick", {opacity:0, y:16}, {opacity:1, y:0, duration:0.5, ease:"power2.out"}, 35.6);
+  tl.fromTo("#s8-word", {opacity:0, y:60, scale:0.96, transformOrigin:"50% 50%"}, {opacity:1, y:0, scale:1, duration:0.8, ease:"power3.out"}, 35.7);
+  tl.fromTo("#s8-rule", {scaleX:0}, {scaleX:1, duration:0.6, ease:"power3.inOut"}, 36.2);
+  tl.fromTo("#s8-line", {opacity:0, y:26}, {opacity:1, y:0, duration:0.6, ease:"power2.out"}, 36.5);
+  tl.fromTo("#s8-sub", {opacity:0, y:18}, {opacity:1, y:0, duration:0.6, ease:"power2.out"}, 37.1);
+
+  window.__timelines = window.__timelines || {};
+  window.__timelines["main"] = tl;
+  tl.seek(0);
+})();
+</script>
+</body>
+</html>

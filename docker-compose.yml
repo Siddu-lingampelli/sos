@@ -3,45 +3,51 @@ services:
     image: postgres:16-alpine
     container_name: silentsos-postgres
     environment:
-      POSTGRES_USER: silentsos
-      POSTGRES_PASSWORD: silentsos
-      POSTGRES_DB: silentsos
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-silentsos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-silentsos}
+    expose:
+      - "5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U silentsos -d silentsos"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-silentsos} -d ${POSTGRES_DB:-silentsos}"]
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
 
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: silentsos-backend
     env_file: .env
     environment:
-      DATABASE_URL: postgresql://silentsos:silentsos@postgres:5432/silentsos
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-silentsos}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-silentsos}}
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:8000"
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      - ./backend:/app
+    restart: unless-stopped
+    profiles: ["production"]
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+        VITE_CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
     container_name: silentsos-frontend
     ports:
-      - "5173:5173"
+      - "${FRONTEND_PORT:-5173}:80"
     depends_on:
-      - backend
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    command: npm run dev -- --host 0.0.0.0 --port 5173
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles: ["production"]
 
 volumes:
   postgres-data:

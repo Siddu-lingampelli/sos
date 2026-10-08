@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Card, CardTitle } from "../components/ui";
-import { DataAPI, MOCK_CAMERAS } from "../lib/api";
+import { DataAPI } from "../lib/api";
 
 interface Row {
   id: number;
@@ -10,9 +10,8 @@ interface Row {
 }
 
 export default function Cameras() {
-  const [rows, setRows] = useState<Row[]>(
-    MOCK_CAMERAS.map((c) => ({ id: c.id, name: c.name, location: c.location, status: c.status })),
-  );
+  // Backend rows only — empty means no posts yet, never demo rows.
+  const [rows, setRows] = useState<Row[]>([]);
   const [live, setLive] = useState(false);
 
   useEffect(() => {
@@ -32,7 +31,7 @@ export default function Cameras() {
         setLive(true);
       })
       .catch(() => {
-        /* offline — demo rows */
+        if (!dead) setLive(false); // backend down — keep the empty grid, say so
       });
     return () => {
       dead = true;
@@ -42,8 +41,18 @@ export default function Cameras() {
   return (
     <div className="flex flex-col gap-5">
       <p className="font-mono text-[11px] tracking-wider text-[#57534a]">
-        SOURCE <strong className={live ? "text-[#3f6212]" : "text-[#a8a08a]"}>{live ? "● BACKEND" : "○ DEMO"}</strong>
+        SOURCE <strong className={live ? "text-[#3f6212]" : "text-[#c81e1e]"}>{live ? "● BACKEND" : "○ BACKEND DOWN"}</strong>
       </p>
+      {rows.length === 0 && (
+        <Card>
+          <p className="font-display font-bold">{live ? "No camera posts yet" : "Backend unreachable"}</p>
+          <p className="mt-1 text-sm text-[#57534a]">
+            {live
+              ? "Posts appear here the first time a stream files an incident — or add one via POST /api/cameras/."
+              : "Start the backend to load camera posts."}
+          </p>
+        </Card>
+      )}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {rows.map((c) => (
           <Card key={c.id}>

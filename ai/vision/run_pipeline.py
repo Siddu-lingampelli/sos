@@ -25,11 +25,25 @@ def main():
     parser.add_argument("--headless", action="store_true", help="Run without UI window")
     args = parser.parse_args()
 
+    # Performance optimization: import here to avoid repeated imports
+    from activity import speed_class
+
     source = int(args.source) if args.source.isdigit() else args.source
 
     print(f"[*] Initializing L4 pipeline on source: {source}")
     stream = CameraStream(source=source, max_fps=args.fps)
-    tracker = PersonTracker(model_path="yolo11n-pose.pt", cfg=DEFAULT)
+    if not stream.cap.isOpened():
+        print(f"[!] Cannot open video source: {source} — exiting (no frames to process).")
+        stream.release()
+        return
+    try:
+        tracker = PersonTracker(model_path="yolo11n-pose.pt", cfg=DEFAULT)
+    except Exception as exc:
+        print(f"[!] Could not load YOLO pose model: {exc}")
+        print("    Place yolo11n-pose.pt next to run_pipeline.py, in ./models, or let")
+        print("    ultralytics download it (needs network on first run).")
+        stream.release()
+        return
     fall = FallDetector(cfg=DEFAULT)
     inact = InactivityMonitor(cfg=DEFAULT)
     activity = ActivityLog(cfg=DEFAULT)
@@ -67,6 +81,7 @@ def main():
                 current_fps = (alpha * (1.0 / elapsed)) + ((1 - alpha) * current_fps)
             last_frame_time = current_time
 
+            # Move speed_class import out of loop for performance
             if n % stride == 1:
                 persons, last_latency = tracker.process(frame)
                 for p in persons:
@@ -78,6 +93,9 @@ def main():
                     score, estate, _ev = engine.update(tid, p)
                     p["eng_score"] = score
                     p["eng_state"] = estate
+                    # Calculate movement state for visualization
+                    move_state = speed_class(hist)
+                    p["move_state"] = move_state
                     for ev in activity.update(tid, p, hist):
                         print(f"   [{ev['tag']}] {ev['text']}")
                 fall.prune(tracker.history.keys())
@@ -100,7 +118,7 @@ def main():
 
             if not args.headless:
                 cv2.imshow("SilentSOS - Level 4", out_frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
+                if (cv2.waitKey(1) & 0xFF) == ord('q'):
                     break
 
     except KeyboardInterrupt:

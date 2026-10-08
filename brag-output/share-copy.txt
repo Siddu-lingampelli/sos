@@ -1,0 +1,1 @@
+Introducing SilentSOS: local AI that watches for falls, stillness and distress calls, verifies over time, and asks a human to confirm. Possible emergency — human verification required.

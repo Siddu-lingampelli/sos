@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import CameraFeed from "../components/CameraFeed";
 import { Card, CardTitle, ConfidenceBar, StatusBadge } from "../components/ui";
 import type { Incident } from "../lib/api";
-import { API_URL, DataAPI } from "../lib/api";
+import { DataAPI, toIncident } from "../lib/api";
 import { useCamera } from "../lib/camera";
 import { useLiveAlerts } from "../lib/useLiveAlerts";
 import type { LiveActivity, LiveIncident } from "../lib/useLiveAlerts";
@@ -20,7 +20,6 @@ export default function Dashboard() {
   const { mode, mobileUrl, setMobileUrl, manualUrl, setManualUrl, activeSource } = useCamera();
   // Real backend rows only — never demo data. Empty means empty.
   const [items, setItems] = useState<Incident[]>([]);
-  const [live, setLive] = useState(false);
   const [dbState, setDbState] = useState("unknown");
   const [backendUp, setBackendUp] = useState(false);
   const [activity, setActivity] = useState<{ time: string; tag: string; text: string }[]>([]);
@@ -45,25 +44,24 @@ export default function Dashboard() {
 
   useEffect(() => {
     let dead = false;
-    DataAPI.incidents()
-      .then((rows) => {
+    const loadIncidents = async () => {
+      try {
+        const [rows, cams, locs] = await Promise.all([
+          DataAPI.incidents({ limit: 50 }),
+          DataAPI.cameras(),
+          DataAPI.locations()
+        ]);
         if (dead) return;
         setBackendUp(true);
-        setItems(
-          rows.map((a) => ({
-            id: a.id,
-            camera: `Cam #${a.camera_id}`,
-            location: "—",
-            eventType: a.event_type,
-            confidence: Math.round(a.confidence * 100),
-            time: new Date(a.timestamp).toLocaleString(),
-            status: a.status,
-          })),
-        );
-      })
-      .catch(() => {
+        const camMap = new Map(cams.map(c => [c.id, c]));
+        const locMap = new Map(locs.map(l => [l.id, l]));
+        const items = await Promise.all(rows.map(a => toIncident(a, camMap, locMap)));
+        setItems(items);
+      } catch {
         // backend down: stay empty, say so honestly below
-      });
+      }
+    };
+    loadIncidents();
     DataAPI.health()
       .then((h) => {
         if (!dead) {
@@ -80,26 +78,64 @@ export default function Dashboard() {
   }, []);
 
   const onIncident = useCallback((inc: LiveIncident) => {
-    setLive(true);
-    setItems((prev) => [
-      {
-        id: inc.id,
-        camera: inc.camera,
-        location: "Live feed",
-        eventType: inc.event_type,
-        confidence: Math.round(inc.confidence * 100),
-        time: new Date().toLocaleTimeString(),
-        status: "OPEN",
-      },
-      ...prev,
-    ]);
+    const confidence = Number.isFinite(inc.confidence) ? Math.round(inc.confidence * 100) : 0;
+    setItems((prev) =>
+      prev.some((i) => i.id === inc.id)
+        ? prev // dedupe: id 0 no longer exists, but double-fires still do
+        : [
+            {
+              id: inc.id,
+              camera: inc.camera,
+              location: "Live feed",
+              eventType: inc.event_type,
+              confidence,
+              time: new Date().toLocaleTimeString(),
+              status: "OPEN",
+            },
+            ...prev,
+          ],
+    );
+  }, []);
+  const onUpdate = useCallback((id: number, status: string) => {
+    if (status === "") {
+      // Incident erased elsewhere — drop the row without a refetch.
+      setItems((prev) => prev.filter((i) => i.id !== id));
+      return;
+    }
+    if (status === "OPEN" || status === "UNDER_REVIEW" || status === "VERIFIED" || status === "DISMISSED") {
+      const next: Incident["status"] = status;
+      setItems((prev) => prev.map((i) => (i.id === id ? { ...i, status: next } : i)));
+    }
   }, []);
   const onActivity = useCallback((act: LiveActivity) => {
     setActivity((prev) =>
       [{ time: new Date().toLocaleTimeString(), tag: act.tag, text: act.text }, ...prev].slice(0, 10),
     );
   }, []);
-  useLiveAlerts(onIncident, undefined, onActivity);
+  // Silent socket: Layout's global socket owns sound + notifications.
+  const wsState = useLiveAlerts(
+    onIncident,
+    onUpdate,
+    onActivity,
+    undefined,
+    async () => {
+      try {
+        const [rows, cams, locs] = await Promise.all([
+          DataAPI.incidents({ limit: 50 }),
+          DataAPI.cameras(),
+          DataAPI.locations()
+        ]);
+        const camMap = new Map(cams.map(c => [c.id, c]));
+        const locMap = new Map(locs.map(l => [l.id, l]));
+        const items = await Promise.all(rows.map(a => toIncident(a, camMap, locMap)));
+        setItems(items);
+        setBackendUp(true);
+      } catch {
+        /* backend still down — keep what we have */
+      }
+    },
+  );
+  const live = wsState === "live";
 
   const openItems = items.filter((i) => i.status === "OPEN");
 
@@ -114,9 +150,9 @@ export default function Dashboard() {
           ENGINE <strong className="text-[#3f6212]">ARMED</strong>
         </span>
         <span>
-          FEED <strong className={live ? "text-[#3f6212]" : "text-[#a8a08a]"}>{live ? "● LIVE" : "○ LOCAL"}</strong>
+          FEED <strong className={live ? "text-[#3f6212]" : "text-[#a8a08a]"}>{live ? "● LIVE" : backendUp ? "○ CONNECTING" : "○ BACKEND DOWN"}</strong>
         </span>
-        <span className="ml-auto hidden sm:inline">{API_URL}</span>
+        <span className="ml-auto hidden sm:inline">LOCAL CONSOLE</span>
       </div>
 
       <div className={`dash-grid xl:min-h-0 xl:flex-1 ${mode === "laptop" ? "dash-desktop" : "dash-mobile"}`}>
@@ -157,7 +193,7 @@ export default function Dashboard() {
             />
           )}
           <div className="min-h-0 flex-1">
-            <CameraFeed source={activeSource} rotate={rotate} apiNote={API_URL} />
+            <CameraFeed source={activeSource} rotate={rotate} />
           </div>
           <div className="mt-3 hidden shrink-0 flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[11px] text-[#57534a] sm:flex">
             <span className="inline-flex items-center gap-1.5">
@@ -174,7 +210,7 @@ export default function Dashboard() {
 
         {/* LOGS — bottom of the right column, scrolls */}
         <Card className="dash-logs flex min-h-[140px] flex-col xl:min-h-0 xl:overflow-hidden">
-          <CardTitle right={<span className="font-mono text-[11px] text-[#a8a08a]">TAIL · {live ? "LIVE" : "DEMO"}</span>}>
+          <CardTitle right={<span className="font-mono text-[11px] text-[#a8a08a]">TAIL · {live ? "LIVE" : "OFFLINE"}</span>}>
             Logs
           </CardTitle>
           <ol className="dash-logs-list flex min-h-0 flex-1 flex-col divide-y divide-[#efece2] overflow-y-auto font-mono text-xs">
@@ -185,7 +221,7 @@ export default function Dashboard() {
                   SYS
                 </span>
                 <span className="truncate text-[#33302a]">
-                  Backend unreachable at {API_URL} — start it to get live logs
+                  Backend unreachable — start it to get live logs
                 </span>
               </li>
             )}

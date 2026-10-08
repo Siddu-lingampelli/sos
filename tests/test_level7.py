@@ -64,3 +64,36 @@ def test_score_capped():
     e = EmergencyEngine(EngineConfig(W_FALL_CONFIRMED=90.0, W_ABNORMAL_POSTURE=90.0))
     score, _, _ = e.update(6, V_FALL)
     assert score == 100.0
+
+
+def test_hovering_at_threshold_does_not_spam_incidents():
+    """A score parked at/above ALERT fires once, not once per frame."""
+    e = EmergencyEngine()
+    e.update(7, V_FALL_STILL)
+    assert e.pop_incident() is not None
+    for _ in range(5):
+        e.update(7, V_FALL_STILL)
+        assert e.pop_incident() is None
+
+
+def test_second_fall_after_partial_recovery_fires_again():
+    """Fall (80) → partial recovery to MONITORING (55) → fall again (80):
+    the dip exceeds REARM_DROP, so the second emergency fires."""
+    e = EmergencyEngine()
+    e.update(8, V_FALL_STILL)
+    assert e.pop_incident() is not None
+    score, state, _ = e.update(8, V_FALL)  # 55, MONITORING
+    assert (score, state) == (55.0, "MONITORING")
+    assert e.pop_incident() is None  # no new incident yet
+    score, state, _ = e.update(8, V_FALL_STILL)  # back to 80
+    assert state == "POSSIBLE_EMERGENCY"
+    assert e.pop_incident() is not None  # second fall fires
+
+
+def test_audio_window_is_short():
+    """A shout older than AUDIO_WINDOW_SEC no longer stacks onto vision."""
+    e = EmergencyEngine(EngineConfig(AUDIO_WINDOW_SEC=10.0))
+    e._audio.append({"t": time.time() - 11, "kind": "DISTRESS_KEYWORD", "detail": "help"})
+    score, _, ev = e.update(9, V_FALL)
+    assert score == 55.0
+    assert "DISTRESS_KEYWORD" not in {s for s, _ in ev}

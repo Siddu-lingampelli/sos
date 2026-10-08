@@ -1,6 +1,10 @@
--- SilentSOS Level 1 dev init. Full schema (users, locations, cameras,
--- incidents, detection_events, alerts) lands in Level 2.
--- This keeps `docker compose up postgres` working for Level-1 connectivity test.
+-- SilentSOS postgres connectivity probe.
+--
+-- NOTE: this file intentionally does NOT create the application schema.
+-- Tables (users, locations, cameras, incidents, detection_events, alerts)
+-- are owned by the backend (SQLAlchemy models + Alembic migrations), so the
+-- schema can never drift between this file and the ORM. This table only
+-- proves the postgres service booted and accepts connections.
 
 CREATE TABLE IF NOT EXISTS _level1_ready (
   id SERIAL PRIMARY KEY,

@@ -25,6 +25,12 @@ class EmergencyEngine:
         self.score: dict[int, float] = defaultdict(float)
         self.state: dict[int, str] = defaultdict(lambda: "NORMAL")
         self._fired: dict[int, bool] = defaultdict(bool)
+        # Score at fire time: a track that only partially recovers (still
+        # MONITORING) and then falls again must fire a second incident. But a
+        # score hovering at the threshold must not spam one incident per
+        # frame, so re-fire needs the score to first dip REARM_DROP below the
+        # fire-time peak (hysteresis), or to fully clear to NORMAL.
+        self._fired_peak: dict[int, float] = {}
         self._audio: deque[dict] = deque(maxlen=200)  # {t, kind, detail}
         self._pending: deque[dict] = deque(maxlen=100)  # fired incident payloads
 
@@ -53,7 +59,17 @@ class EmergencyEngine:
             ev.append(("FALL_DETECTED", cfg.W_FALL_CONFIRMED))
         elif fall == "POSSIBLE_FALL":
             ev.append(("FALL_DETECTED", cfg.W_FALL_POSSIBLE))
-        if (ang is not None and ang >= 55.0) or aspect >= 1.1:
+        # Read the shared thresholds so ABNORMAL_POSTURE and the fall detector
+        # agree on what "horizontal" means. vision/ is on sys.path in every
+        # entry point (stream.py, run_pipeline.py, tests), so a plain import
+        # works; the fallback keeps this module importable standalone.
+        try:
+            from config import DEFAULT as FALL_CFG
+        except ImportError:  # pragma: no cover - standalone import path
+            FALL_CFG = None
+        angle_thresh = FALL_CFG.FALL_ANGLE_THRESHOLD if FALL_CFG else 55.0
+        aspect_thresh = FALL_CFG.FALL_ASPECT_THRESHOLD if FALL_CFG else 0.9
+        if (ang is not None and ang >= angle_thresh) or aspect >= aspect_thresh:
             ev.append(("ABNORMAL_POSTURE", cfg.W_ABNORMAL_POSTURE))
         if inact == "INACTIVE":
             ev.append(("POST_FALL_INACTIVITY", cfg.W_POST_FALL_INACTIVITY))
@@ -77,6 +93,7 @@ class EmergencyEngine:
 
         if state == "POSSIBLE_EMERGENCY" and not self._fired[tid]:
             self._fired[tid] = True
+            self._fired_peak[tid] = score
             self._pending.append({
                 "track_id": tid,
                 "event_type": self._label(ev),
@@ -85,7 +102,18 @@ class EmergencyEngine:
                 "timestamp": time.time(),
             })
         elif state == "NORMAL":
-            self._fired[tid] = False  # re-arm after full recovery
+            # Recovery signal consumed: clear fired flag so a new incident
+            # can be raised if the person falls again.
+            self._fired[tid] = False
+            self._fired_peak.pop(tid, None)
+        elif self._fired[tid]:
+            # Partial recovery: if the score dipped far enough below the
+            # fire-time peak, re-arm so a genuine second fall still fires.
+            peak = self._fired_peak.get(tid, score)
+            # Do NOT inflate peak after fire — keep fire-time peak only
+            if peak - score >= cfg.REARM_DROP:
+                self._fired[tid] = False
+                self._fired_peak.pop(tid, None)
 
         return score, state, ev
 
@@ -113,3 +141,4 @@ class EmergencyEngine:
             self.state.pop(tid, None)
             self.score.pop(tid, None)
             self._fired.pop(tid, None)
+            self._fired_peak.pop(tid, None)

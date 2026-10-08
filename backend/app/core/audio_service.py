@@ -11,6 +11,7 @@ import threading
 import time
 
 from .bus import bus
+from .health import health
 
 ai_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../ai"))
 if ai_path not in sys.path:
@@ -27,6 +28,7 @@ try:
 except ImportError as e:
     AUDIO_AVAILABLE = False
     print(f"WARNING: Could not import AI audio modules: {e}")
+    health.set("audio", "down", f"import failed: {e}")
 
 _lock = threading.Lock()
 _engines = []
@@ -45,13 +47,29 @@ def unregister_engine(engine):
 
 def _audio_loop():
     print("[audio] Starting global mic stream...")
+    # .env knobs (AUDIO_KEYWORDS, WHISPER_MODEL_SIZE) take effect here so the
+    # example env actually does something.
+    try:
+        from .config import settings
+        keywords = settings.audio_keywords
+        whisper_size = settings.WHISPER_MODEL_SIZE
+    except Exception as exc:  # noqa: BLE001
+        print(f"[audio] could not read settings: {exc}")
+        keywords, whisper_size = None, None
     cfg = AudioConfig()
-    pipe = AudioPipeline(cfg)
+    if whisper_size:
+        cfg.WHISPER_SIZE = whisper_size
+    print(f"[audio] distress keywords: {keywords or cfg.KEYWORDS}")
+    pipe = AudioPipeline(cfg, keywords=keywords)
     try:
         src = MicStream(cfg)
         src.start()
+        health.set("audio", "ok", "listening")
     except Exception as e:
         print(f"[audio] Failed to start microphone: {e}")
+        health.set("audio", "down", f"mic start failed: {e}")
+        bus.broadcast_sync({"type": "system", "component": "audio",
+                            "status": "down", "detail": str(e)})
         return
 
     while _running:
@@ -63,6 +81,7 @@ def _audio_loop():
             events = pipe.process_block(blk)
         except Exception as e:
             print(f"[audio] pipeline error: {e}")
+            health.set("audio", "degraded", f"pipeline error: {e}")
             continue
             
         for ev in events:
@@ -90,6 +109,7 @@ def start_audio_service():
     global _thread, _running
     if not AUDIO_AVAILABLE:
         print("WARNING: Audio unavailable, skipping service start.")
+        health.set("audio", "down", "audio modules unavailable")
         return
     with _lock:
         if not _running:
